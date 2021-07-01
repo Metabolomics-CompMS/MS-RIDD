@@ -3,7 +3,6 @@ import tkinter as tk
 
 import MS_RIDD_GUI
 
-# pd.options.display.width = 200
 
 def main():
     root = tk.Tk()
