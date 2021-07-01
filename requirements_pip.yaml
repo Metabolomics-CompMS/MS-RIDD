@@ -1,0 +1,15 @@
+name: MSRIDD
+dependencies:
+- python=3.7.3
+- pip
+- pip:
+  - matplotlib==3.0.3
+  - numpy==1.16.2
+  - openpyxl==2.6.1
+  - pandas==0.24.2
+  - pyinstaller
+  - PyQt5
+  - python-pptx==0.6.18
+  - tornado
+  - setuptools
+
