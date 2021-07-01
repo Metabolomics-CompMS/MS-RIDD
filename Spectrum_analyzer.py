@@ -2131,7 +2131,7 @@ def reconstruct_db_positions(score_dict):
         for v in score_dict.values():
             print(f"Positions: {v['Positions']}")
         print(f'New No1. :{new_no1_pos}')
-        print(keys)
+        # print(keys)
         raise KeyError
     score_dict[key]['Score'] += 999
     return score_dict
