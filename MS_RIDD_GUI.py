@@ -261,7 +261,8 @@ class MSRIDD_GUI(tk.Frame):
         self.db_1_tree_column_width = [w_unit, w_unit*2, w_unit, w_unit, w_unit]
         self.db_1_tree["column"] = self.db_1_tree_column
         self.db_1_tree["show"] = "headings"
-        for i, (colname, width) in enumerate(zip(self.db_1_tree_column, self.db_1_tree_column_width)):
+        for i, (colname, width) in enumerate(zip(
+            self.db_1_tree_column, self.db_1_tree_column_width)):
             self.db_1_tree.heading(i, text=colname)
             self.db_1_tree.column(i, width=width)
         v_scrollbar = tk.Scrollbar(self.db_1_frame, orient=tk.VERTICAL,
@@ -279,7 +280,8 @@ class MSRIDD_GUI(tk.Frame):
         self.db_2_tree_column_width = [w_unit, w_unit*2, w_unit, w_unit, w_unit]
         self.db_2_tree["column"] = self.db_2_tree_column
         self.db_2_tree["show"] = "headings"
-        for i, (colname, width) in enumerate(zip(self.db_2_tree_column, self.db_2_tree_column_width)):
+        for i, (colname, width) in enumerate(zip(
+            self.db_2_tree_column, self.db_2_tree_column_width)):
             self.db_2_tree.heading(i, text=colname)
             self.db_2_tree.column(i, width=width)
         v_scrollbar = tk.Scrollbar(self.db_2_frame, orient=tk.VERTICAL,
@@ -297,7 +299,8 @@ class MSRIDD_GUI(tk.Frame):
         self.db_3_tree_column_width = [w_unit, w_unit*2, w_unit, w_unit, w_unit]
         self.db_3_tree["column"] = self.db_3_tree_column
         self.db_3_tree["show"] = "headings"
-        for i, (colname, width) in enumerate(zip(self.db_3_tree_column, self.db_3_tree_column_width)):
+        for i, (colname, width) in enumerate(zip(
+            self.db_3_tree_column, self.db_3_tree_column_width)):
             self.db_3_tree.heading(i, text=colname)
             self.db_3_tree.column(i, width=width)
         v_scrollbar = tk.Scrollbar(self.db_3_frame, orient=tk.VERTICAL,
@@ -334,7 +337,7 @@ class MSRIDD_GUI(tk.Frame):
         exportmenu = ['Result export']
         for menu in exportmenu:
             self.exportmenu.entryconfigure(menu, state='disabled')
-        # self.re_analysis_btn['state'] = tk.DISABLED
+        self.re_analysis_btn['state'] = tk.DISABLED
         self.modifying_db_btn['state'] = tk.DISABLED
         self.show_only_matched_ions_checkbtn['state'] = tk.DISABLED
         self.comment_entry['state'] = tk.DISABLED
@@ -404,10 +407,10 @@ class MSRIDD_GUI(tk.Frame):
         peaklists_dict = {name.get(): path.get() for name, path in zip(
             self.batch_setwin.entries['Files'], 
             self.batch_setwin.entries['Paths'])}
-        ms_tolerance_ppm = 15
-        must_nl_cut_off_dict = {'diagnostic_1': ['OAD03', 0.01], 
-                                'diagnostic_2': ['OAD16', 0.01], 
-                                'sphingobase': 0.005}
+        self.ms_tolerance_ppm = 15
+        self.must_nl_cut_off_dict = {'diagnostic_1': ['OAD03', 0.01], 
+                                     'diagnostic_2': ['OAD16', 0.01], 
+                                     'sphingobase': 0.005}
         cut_off_ratio = 0
         while not self.analysis_start:
             time.sleep(0.1)
@@ -418,8 +421,8 @@ class MSRIDD_GUI(tk.Frame):
                 alignment_path=alignment_path, 
                 # merged=merged_check,
                 peakid_path = peakid_path, peaklists_dict=peaklists_dict, 
-                ms_tolerance_ppm=ms_tolerance_ppm, 
-                must_nl_cut_off_dict=must_nl_cut_off_dict, 
+                ms_tolerance_ppm=self.ms_tolerance_ppm, 
+                must_nl_cut_off_dict=self.must_nl_cut_off_dict, 
                 cut_off_ratio=cut_off_ratio, normalized=normalized_data,
                 sec_rep=self.section_report, sec_bar=self.section_bar,
                 each_rep=self.each_report, each_bar=self.each_prgbar, 
@@ -559,10 +562,10 @@ class MSRIDD_GUI(tk.Frame):
         self.user_prefix = user_def_path.rsplit('/', 1)[1].replace(postfix, '')
         inputdata_path = self.inputdata_entry.get()
         self. normalized_data = False
-        ms_tolerance_ppm = 15
-        must_nl_cut_off_dict = {'diagnostic_1': ['OAD03', 0.01], 
-                                'diagnostic_2': ['OAD16', 0.01], 
-                                'sphingobase': 0.005}
+        self.ms_tolerance_ppm = 15
+        self.must_nl_cut_off_dict = {'diagnostic_1': ['OAD03', 0.01], 
+                                     'diagnostic_2': ['OAD16', 0.01], 
+                                     'sphingobase': 0.005}
         cut_off_ratio = 0
         while not self.analysis_start: time.sleep(0.1)
         self.setting_window.destroy()
@@ -570,8 +573,8 @@ class MSRIDD_GUI(tk.Frame):
             spectrum_analyzer = SingleAnalyzer(
                 tabel_format=dataformat, directry=self.prj_path, 
                 prefix=self.user_prefix, input_data=inputdata_path, 
-                ms_tolerance_ppm=ms_tolerance_ppm, 
-                must_nl_cut_off_dict=must_nl_cut_off_dict, 
+                ms_tolerance_ppm=self.ms_tolerance_ppm, 
+                must_nl_cut_off_dict=self.must_nl_cut_off_dict, 
                 cut_off_ratio=cut_off_ratio, file_name='',
                 sec_rep=self.section_report, sec_bar=self.section_bar,
                 each_rep=self.each_report, each_bar=self.each_prgbar, 
@@ -648,6 +651,10 @@ class MSRIDD_GUI(tk.Frame):
         cols = self.target_table.columns.tolist()
         if 'pmol/mg tissue' in cols: self.normalized_data = True
         else: self.normalized_data = False
+        self.ms_tolerance_ppm = 15
+        self.must_nl_cut_off_dict = {'diagnostic_1': ['OAD03', 0.01], 
+                                     'diagnostic_2': ['OAD16', 0.01], 
+                                     'sphingobase': 0.005}
         self.set_analysis_result_into_table()
         self.data_setting(event=None, is_first=True)
         self.activate_widgets()
@@ -992,14 +999,44 @@ class MSRIDD_GUI(tk.Frame):
         idx = int(focused_item[0])
         self.selected_idx = idx
         result_dict = self.oad_result_dict[idx]
+        result_dict_len = len(result_dict)
         self.temp_msms_df = self.msms_dict[idx]
         self.temp_lipid_info = self.lipid_structural_info_dict[idx]
         self.temp_graph_info = self.graph_dict[idx]
-        result_dict_len = len(result_dict)
         resolved_level = result_dict['Resolved level']
         each_bools = result_dict['Each bools']
         moiety_1, moiety_2, moiety_3 = {}, {}, {}
-        #region Update db trees
+        #region Update db trees and set current C=C pos
+        if result_dict_len == 4:
+            moiety_1 = result_dict['Moiety-1']
+        elif result_dict_len == 5:
+            moiety_1 = result_dict['Moiety-1']
+            moiety_2 = result_dict['Moiety-2']
+        elif result_dict_len == 6:
+            moiety_1 = result_dict['Moiety-1']
+            moiety_2 = result_dict['Moiety-2']
+            moiety_3 = result_dict['Moiety-3']
+        #endregion
+        self.update_db_trees(result_dict=result_dict, is_first=is_first)
+        self.focus_and_select_db_trees()
+        #endregion
+        #region Update total MS/MS fig
+        cid_dict = self.cid_result_dict[idx]
+        self.update_msms_fig(cid_info=cid_dict)
+        #endregion
+        #region Update OAD-MS/MS fig with reference
+        self.update_oad_msms_fig_with_ref(
+            dict_1=moiety_1, dict_2=moiety_2, dict_3=moiety_3)
+        if is_first:
+            """ func(self.partially_update_data) occurs 3 times unnecessarily
+                due to the binding problem """
+            self.db_candidates_frame.bind_class(
+                "Treeview", "<<TreeviewSelect>>", self.partially_update_data)
+        #endregion
+
+    def update_db_trees(self, result_dict, is_first=False):
+        result_dict_len = len(result_dict)
+        moiety_1, moiety_2, moiety_3 = {}, {}, {}
         if result_dict_len == 4:
             moiety_1 = result_dict['Moiety-1']
             if moiety_1:
@@ -1014,9 +1051,9 @@ class MSRIDD_GUI(tk.Frame):
                     db_1=True, db_2=True, db_3=True, is_first=is_first)
                 self.fill_in_matched_fragment_ions_tree(is_first=is_first)
         elif result_dict_len == 5:
-            if resolved_level == 'All':
-                moiety_1 = result_dict['Moiety-1']
-                moiety_2 = result_dict['Moiety-2']
+            moiety_1 = result_dict['Moiety-1']
+            moiety_2 = result_dict['Moiety-2']
+            if moiety_1 and moiety_2:
                 self.fill_in_data_on_db_tree(
                     tree_no=1, data=moiety_1, is_first=is_first)
                 self.fill_in_data_on_db_tree(
@@ -1025,16 +1062,14 @@ class MSRIDD_GUI(tk.Frame):
                     db_3=True, is_first=is_first)
                 self.fill_in_matched_fragment_ions_tree(moiety_1=moiety_1[0], 
                     moiety_2=moiety_2[0], is_first=is_first)
-            elif resolved_level == 'Partial' and each_bools[1]:
-                moiety_2 = result_dict['Moiety-2']
+            elif moiety_2:
                 self.fill_in_data_on_db_tree(
                     tree_no=2, data=moiety_2, is_first=is_first)
                 self.fill_in_nan_on_db_trees(
                     db_1=True, db_3=True, is_first=is_first)
                 self.fill_in_matched_fragment_ions_tree(
                     moiety_2=moiety_2[0], is_first=is_first)
-            elif resolved_level == 'Partial' and each_bools[0]:
-                moiety_1 = result_dict['Moiety-1']
+            elif moiety_1:
                 self.fill_in_data_on_db_tree(
                     tree_no=1, data=moiety_1, is_first=is_first)
                 self.fill_in_nan_on_db_trees(
@@ -1046,10 +1081,10 @@ class MSRIDD_GUI(tk.Frame):
                     db_1=True, db_2=True, db_3=True, is_first=is_first)
                 self.fill_in_matched_fragment_ions_tree(is_first=is_first)
         elif result_dict_len == 6:
-            if resolved_level == 'All':
-                moiety_1 = result_dict['Moiety-1']
-                moiety_2 = result_dict['Moiety-2']
-                moiety_3 = result_dict['Moiety-3']
+            moiety_1 = result_dict['Moiety-1']
+            moiety_2 = result_dict['Moiety-2']
+            moiety_3 = result_dict['Moiety-3']
+            if moiety_1 and moiety_2 and moiety_3:
                 self.fill_in_data_on_db_tree(
                     tree_no=1, data=moiety_1, is_first=is_first)
                 self.fill_in_data_on_db_tree(
@@ -1058,9 +1093,7 @@ class MSRIDD_GUI(tk.Frame):
                     tree_no=3, data=moiety_3, is_first=is_first)
                 self.fill_in_matched_fragment_ions_tree(moiety_1=moiety_1[0], 
                     moiety_2=moiety_2[0], moiety_3=moiety_3[0], is_first=is_first)
-            elif resolved_level == 'Partial' and each_bools[1] and each_bools[2]:
-                moiety_2 = result_dict['Moiety-2']
-                moiety_3 = result_dict['Moiety-3']
+            elif moiety_2 and moiety_3:
                 self.fill_in_data_on_db_tree(
                     tree_no=2, data=moiety_2, is_first=is_first)
                 self.fill_in_data_on_db_tree(
@@ -1068,9 +1101,7 @@ class MSRIDD_GUI(tk.Frame):
                 self.fill_in_nan_on_db_trees(db_1=True, is_first=is_first)
                 self.fill_in_matched_fragment_ions_tree(moiety_2=moiety_2[0], 
                     moiety_3=moiety_3[0], is_first=is_first)
-            elif resolved_level == 'Partial' and each_bools[0] and each_bools[2]:
-                moiety_1 = result_dict['Moiety-1']
-                moiety_3 = result_dict['Moiety-3']
+            elif moiety_1 and moiety_3:
                 self.fill_in_data_on_db_tree(
                     tree_no=1, data=moiety_1, is_first=is_first)
                 self.fill_in_data_on_db_tree(
@@ -1078,9 +1109,7 @@ class MSRIDD_GUI(tk.Frame):
                 self.fill_in_nan_on_db_trees(db_2=True, is_first=is_first)
                 self.fill_in_matched_fragment_ions_tree(moiety_1=moiety_1[0], 
                     moiety_3=moiety_3[0], is_first=is_first)
-            elif resolved_level == 'Partial' and each_bools[0] and each_bools[1]:
-                moiety_1 = result_dict['Moiety-1']
-                moiety_2 = result_dict['Moiety-2']
+            elif moiety_1 and moiety_2:
                 self.fill_in_data_on_db_tree(
                     tree_no=1, data=moiety_1, is_first=is_first)
                 self.fill_in_data_on_db_tree(
@@ -1088,24 +1117,21 @@ class MSRIDD_GUI(tk.Frame):
                 self.fill_in_nan_on_db_trees(db_3=True, is_first=is_first)
                 self.fill_in_matched_fragment_ions_tree(moiety_1=moiety_1[0], 
                     moiety_2=moiety_2[0], is_first=is_first)
-            elif resolved_level == 'Partial' and each_bools[2]:
-                moiety_3 = result_dict['Moiety-3']
+            elif moiety_3:
                 self.fill_in_data_on_db_tree(
                     tree_no=3, data=moiety_3, is_first=is_first)
                 self.fill_in_nan_on_db_trees(
                     db_1=True, db_2=True, is_first=is_first)
                 self.fill_in_matched_fragment_ions_tree(
                     moiety_3=moiety_3[0], is_first=is_first)
-            elif resolved_level == 'Partial' and each_bools[1]:
-                moiety_2 = result_dict['Moiety-2']
+            elif moiety_2:
                 self.fill_in_data_on_db_tree(
                     tree_no=2, data=moiety_2, is_first=is_first)
                 self.fill_in_nan_on_db_trees(
                     db_1=True, db_3=True, is_first=is_first)
                 self.fill_in_matched_fragment_ions_tree(
                     moiety_2=moiety_2[0], is_first=is_first)
-            elif resolved_level == 'Partial' and each_bools[0]:
-                moiety_1 = result_dict['Moiety-1']
+            elif moiety_1:
                 self.fill_in_data_on_db_tree(
                     tree_no=1, data=moiety_1, is_first=is_first)
                 self.fill_in_nan_on_db_trees(
@@ -1116,24 +1142,9 @@ class MSRIDD_GUI(tk.Frame):
                 self.fill_in_nan_on_db_trees(
                     db_1=True, db_2=True, db_3=True, is_first=is_first)
                 self.fill_in_matched_fragment_ions_tree(is_first=is_first)
-        #endregion
-        #region Set current C=C pos
         self.db_1 = moiety_1[0]['N-discription'] if moiety_1 else ''
         self.db_2 = moiety_2[0]['N-discription'] if moiety_2 else ''
         self.db_3 = moiety_3[0]['N-discription'] if moiety_3 else ''
-        self.focus_and_select_db_trees()
-        #endregion
-        #region Update total MS/MS fig
-        cid_dict = self.cid_result_dict[idx]
-        self.update_msms_fig(cid_info=cid_dict)
-        #endregion
-        #region Update OAD-MS/MS fig with reference
-        self.update_oad_msms_fig_with_ref(
-            dict_1=moiety_1, dict_2=moiety_2, dict_3=moiety_3)
-        if is_first:
-            self.db_candidates_frame.bind_class(
-                "Treeview", "<<TreeviewSelect>>", self.partially_update_data)
-        #endregion
 
     def get_focused_item(self, is_first=False):
         if is_first:
@@ -1172,27 +1183,44 @@ class MSRIDD_GUI(tk.Frame):
         #      Presence:~, Notice:~, Peaks dict:{}}
         # tree.column = ['Rank', 'moiety-1', 'Score', 'Presence', 'Rel. Int']
         if tree_no == 1:
-            pwin = self.db_1_pwin
-            tree = self.db_1_tree
+            self.db_1_tree.delete(*self.db_1_tree.get_children())
             bg = "#fdedec" #red
+            for i, d in data.items():
+                if i == 'Determined db':
+                    continue
+                tag = 'colored' if i%2 == 1 else 'white'
+                self.db_1_tree.insert("", "end", tags=tag, 
+                    values=[i+1, d['N-discription'], d['Score'], d['Presence'], 
+                    d['Ratio sum']])
+            self.db_1_tree.tag_configure('colored', background=bg)
+            if is_first:
+                self.db_1_pwin.add(self.db_1_tree)
         if tree_no == 2:
-            pwin = self.db_2_pwin
-            tree = self.db_2_tree
+            self.db_2_tree.delete(*self.db_2_tree.get_children())
             bg = "#ebf5fb" #blue
+            for i, d in data.items():
+                if i == 'Determined db':
+                    continue
+                tag = 'colored' if i%2 == 1 else 'white'
+                self.db_2_tree.insert("", "end", tags=tag, 
+                    values=[i+1, d['N-discription'], d['Score'], d['Presence'], 
+                    d['Ratio sum']])
+            self.db_2_tree.tag_configure('colored', background=bg)
+            if is_first:
+                self.db_2_pwin.add(self.db_2_tree)
         if tree_no == 3:
-            pwin = self.db_3_pwin
-            tree = self.db_3_tree
+            self.db_3_tree.delete(*self.db_3_tree.get_children())
             bg = "#e9f7ef" #green
-        tree.delete(*tree.get_children())
-        for i, d in data.items():
-            if i == 'Determined db':
-                continue
-            tag = 'colored' if i%2 == 1 else 'white'
-            tree.insert("", "end", tags=tag, values=[i+1, d['N-discription'], 
-                d['Score'], d['Presence'], d['Ratio sum']])
-        tree.tag_configure('colored', background=bg)
-        if is_first:
-            pwin.add(tree)
+            for i, d in data.items():
+                if i == 'Determined db':
+                    continue
+                tag = 'colored' if i%2 == 1 else 'white'
+                self.db_3_tree.insert("", "end", tags=tag, 
+                    values=[i+1, d['N-discription'], d['Score'], d['Presence'], 
+                    d['Ratio sum']])
+            self.db_3_tree.tag_configure('colored', background=bg)
+            if is_first:
+                self.db_3_pwin.add(self.db_3_tree)
 
     def fill_in_matched_fragment_ions_tree(self, moiety_1=False, moiety_2=False, 
         moiety_3=False, is_first=False):
@@ -1379,7 +1407,9 @@ class MSRIDD_GUI(tk.Frame):
 
     def partially_update_data(self, event):
         db_list = self.get_current_db_pos_and_rank()
-        db_1_pos, db_2_pos, db_3_pos = db_list[0][1], db_list[1][1], db_list[2][1]
+        db_1_pos = db_list[0][1]
+        db_2_pos = db_list[1][1]
+        db_3_pos = db_list[2][1]
         db_1_changed = (db_1_pos != self.db_1)
         db_2_changed = (db_2_pos != self.db_2)
         db_3_changed = (db_3_pos != self.db_3)
@@ -1411,24 +1441,27 @@ class MSRIDD_GUI(tk.Frame):
                     if db_3_pos == d['N-discription']:
                         new_db_3 = d
                         moiety_3[0] = d
-            self.fill_in_matched_fragment_ions_tree(moiety_1=new_db_1, 
-                moiety_2=new_db_2, moiety_3=new_db_3)
-            self.update_oad_msms_fig_with_ref(dict_1=moiety_1, dict_2=moiety_2, 
-                dict_3=moiety_3)
+            self.fill_in_matched_fragment_ions_tree(
+                moiety_1=new_db_1, moiety_2=new_db_2, moiety_3=new_db_3)
+            self.update_oad_msms_fig_with_ref(
+                dict_1=moiety_1, dict_2=moiety_2, dict_3=moiety_3)
 
     def get_current_db_pos_and_rank(self):
         # tree.column = ['Rank', 'moiety-1', 'Score', 'Presence', 'Rel. Int']
-        db_1_pos = self.db_1_tree.item(self.db_1_tree.selection()[0], 'values')[1]
-        db_2_pos = self.db_2_tree.item(self.db_2_tree.selection()[0], 'values')[1]
-        db_3_pos = self.db_3_tree.item(self.db_3_tree.selection()[0], 'values')[1]
-        result_dict = self.oad_result_dict[self.selected_idx]
+        tree1_item = self.db_1_tree.item(self.db_1_tree.selection()[0],'values')
+        tree2_item = self.db_2_tree.item(self.db_2_tree.selection()[0],'values')
+        tree3_item = self.db_3_tree.item(self.db_3_tree.selection()[0],'values')
+        db_1_pos = tree1_item[1]
+        db_2_pos = tree2_item[1]
+        db_3_pos = tree3_item[1]
+        res = self.oad_result_dict[self.selected_idx]
         def find_rank(pos, moiety):
             for rank, d in moiety.items():
                 if rank != 'Determined db' and d['N-discription'] == pos:
                     return rank
-        rank_1 = find_rank(db_1_pos, result_dict['Moiety-1']) if db_1_pos != '' else -1
-        rank_2 = find_rank(db_2_pos, result_dict['Moiety-2']) if db_2_pos != '' else -1
-        rank_3 = find_rank(db_3_pos, result_dict['Moiety-3']) if db_3_pos != '' else -1
+        rank_1 = find_rank(db_1_pos, res['Moiety-1']) if db_1_pos != '' else -1
+        rank_2 = find_rank(db_2_pos, res['Moiety-2']) if db_2_pos != '' else -1
+        rank_3 = find_rank(db_3_pos, res['Moiety-3']) if db_3_pos != '' else -1
         return [[rank_1, db_1_pos], [rank_2, db_2_pos], [rank_3, db_3_pos]]
 
     def judge_db_change(self, new_db_1, new_db_2, new_db_3):
@@ -1459,32 +1492,11 @@ class MSRIDD_GUI(tk.Frame):
         idx = self.selected_idx
         if any([db_1_changed, db_2_changed, db_3_changed]):
             if db_1_changed:
-                old_no1 = copy.copy(self.oad_result_dict[idx]['Moiety-1'][0])
-                new_no1 = copy.copy(self.oad_result_dict[idx]['Moiety-1'][rank_1])
-                self.oad_result_dict[idx]['Moiety-1'][0] = new_no1
-                self.oad_result_dict[idx]['Moiety-1']['Determined db'] = new_no1
-                self.oad_result_dict[idx]['Moiety-1'][rank_1] = old_no1
-                self.oad_result_dict[idx]['Moiety-1'][0]['Notice'] += ', Modified'
-                self.oad_result_dict[idx]['Moiety-1']['Determined db']['Notice'] += ', Modified'
-                self.oad_result_dict[idx]['Moiety-1'][rank_1]['Notice'] += ', Modified'
+                self.re_const_oad_res_dict(idx=idx, moiety_num=1, rank=rank_1)
             if db_2_changed:
-                old_no1 = copy.copy(self.oad_result_dict[idx]['Moiety-2'][0])
-                new_no1 = copy.copy(self.oad_result_dict[idx]['Moiety-2'][rank_2])
-                self.oad_result_dict[idx]['Moiety-2'][0] = new_no1
-                self.oad_result_dict[idx]['Moiety-2']['Determined db'] = new_no1
-                self.oad_result_dict[idx]['Moiety-2'][rank_2] = old_no1
-                self.oad_result_dict[idx]['Moiety-2'][0]['Notice'] += ', Modified'
-                self.oad_result_dict[idx]['Moiety-2']['Determined db']['Notice'] += ', Modified'
-                self.oad_result_dict[idx]['Moiety-2'][rank_2]['Notice'] += ', Modified'
+                self.re_const_oad_res_dict(idx=idx, moiety_num=2, rank=rank_2)
             if db_3_changed:
-                old_no1 = copy.copy(self.oad_result_dict[idx]['Moiety-3'][0])
-                new_no1 = copy.copy(self.oad_result_dict[idx]['Moiety-3'][rank_3])
-                self.oad_result_dict[idx]['Moiety-3'][0] = new_no1
-                self.oad_result_dict[idx]['Moiety-3']['Determined db'] = new_no1
-                self.oad_result_dict[idx]['Moiety-3'][rank_3] = old_no1
-                self.oad_result_dict[idx]['Moiety-3'][0]['Notice'] += ', Modified'
-                self.oad_result_dict[idx]['Moiety-3']['Determined db']['Notice'] += ', Modified'
-                self.oad_result_dict[idx]['Moiety-3'][rank_3]['Notice'] += ', Modified'
+                self.re_const_oad_res_dict(idx=idx, moiety_num=3, rank=rank_3)
             df = self.target_table[self.target_table['ID'] == idx]
             target_row = list(df.index)[0]
             old_name = df['OAD result name'].values[0]
@@ -1493,6 +1505,26 @@ class MSRIDD_GUI(tk.Frame):
             self.target_table.loc[target_row:target_row, ['OAD result name']] \
                 = new_name
             self.update_result_table(idx)
+
+    def re_const_oad_res_dict(self, idx, moiety_num, rank):
+        moiety = f'Moiety-{moiety_num}'
+        new_no1 = copy.copy(self.oad_result_dict[idx][moiety][rank])
+        notice = new_no1['Notice']
+        if 'Modified' not in notice:
+            new_no1['Notice'] += ', Modified'
+        new_d = {0: new_no1}
+        for key, v in self.oad_result_dict[idx][moiety].items():
+            if type(key) == int:
+                if key < rank:
+                    new_d[key+1] = v
+                    if (key == 0) and ('Modified' not in v['Notice']):
+                        new_d[key+1]['Notice'] += ', Modified'
+                elif key == rank:
+                    pass
+                else:
+                    new_d[key] = v
+        new_d['Determined db'] = new_no1
+        self.oad_result_dict[idx][moiety] = new_d
 
     def update_result_table(self, target_idx):
         self.result_table_tree.delete(*self.result_table_tree.get_children())
@@ -1865,6 +1897,7 @@ class MSRIDD_GUI(tk.Frame):
     def set_re_analysis_condition(self):
         focused_item = self.get_focused_item()
         metabolite_name = focused_item[5]
+        pprint.pprint(self.temp_lipid_info)
         self.re_analysis_win = ReAnalysisWindow(
             master=self.master, name=metabolite_name, info=self.temp_lipid_info)
         self.re_analysis_win.start_btn["command"] \
@@ -1898,24 +1931,122 @@ class MSRIDD_GUI(tk.Frame):
     def start_re_analysis(self, dbs_1, dbs_2, dbs_3):
         thread_1 = threading.Thread(
             target=self.re_analysis, args=(dbs_1, dbs_2, dbs_3))
-        thread_2 = threading.Thread(target=self.create_re_analysis_prgbar_window)
+        thread_2 = threading.Thread(
+            target=self.create_re_analysis_prgbar_window)
         thread_1.start()
         thread_2.start()
 
     def create_re_analysis_prgbar_window(self):
         self.temp_prgbar = ProgressBar(self.master,
-            title="Re-analysis in progress", detail="--- Re-analizing ---")
+            title="Re-analysis in progress", detail="--- Re analizing ---")
 
     def re_analysis(self, dbs_1, dbs_2, dbs_3):
         ontology = self.temp_lipid_info['Ontology']
+        ref_mz = self.temp_lipid_info['Ref precursor Mz']
+        ms_tol = math_floor(
+            self.ms_tolerance_ppm*ref_mz/(1000*1000), 6)
+        db_in_SPB = self.temp_lipid_info['Unsaturated sphingobase']
         deuterium = 0
+        idx = int(self.get_focused_item()[0])
         if dbs_1:
+            c_num = self.temp_lipid_info['Each moiety info']['chain-1']
+            db_num = self.temp_lipid_info['Each moiety info']['db-1']
+            sph_set = [db_in_SPB, c_num]
             for comb in dbs_1:
                 ref_oad_d = ReAnalyzer.generate_ref_oad_nl_and_type(
                     each_comb=comb, ontology=ontology, deuterium=deuterium)
-                print(ref_oad_d)
-        time.sleep(5)
+                re_anal_bool = ReAnalyzer.query_essential_diagnostic_ions(
+                    df=self.temp_msms_df, ref_oad_dict=ref_oad_d, 
+                    db_in_SPB=db_in_SPB, c_num=c_num, db_num=db_num,
+                    tolerance=ms_tol,
+                    must_nl_cut_off_dict=self.must_nl_cut_off_dict,
+                    structure_dict=self.temp_lipid_info)
+                print(re_anal_bool)
+                score_dict = ReAnalyzer.calc_presence_ratios_and_score(
+                    ref_oad_dict=ref_oad_d, cut_df=self.temp_msms_df,
+                    ref_precursor_mz=ref_mz, ms_tol_ppm=self.ms_tolerance_ppm,
+                    sph_set=sph_set)
+                self.set_re_analysis_result(
+                    re_analysis_moiety=1, idx=idx, score_d=score_dict)
+        if dbs_2:
+            c_num = self.temp_lipid_info['Each moiety info']['chain-2']
+            db_num = self.temp_lipid_info['Each moiety info']['db-2']
+            sph_set = [False, c_num]
+            for comb in dbs_2:
+                ref_oad_d = ReAnalyzer.generate_ref_oad_nl_and_type(
+                    each_comb=comb, ontology=ontology, deuterium=deuterium)
+                re_anal_bool = ReAnalyzer.query_essential_diagnostic_ions(
+                    df=self.temp_msms_df, ref_oad_dict=ref_oad_d, 
+                    db_in_SPB=db_in_SPB, c_num=c_num, db_num=db_num,
+                    tolerance=ms_tol,
+                    must_nl_cut_off_dict=self.must_nl_cut_off_dict,
+                    structure_dict=self.temp_lipid_info)
+                print(re_anal_bool)
+                score_dict = ReAnalyzer.calc_presence_ratios_and_score(
+                    ref_oad_dict=ref_oad_d, cut_df=self.temp_msms_df,
+                    ref_precursor_mz=ref_mz, ms_tol_ppm=self.ms_tolerance_ppm,
+                    sph_set=sph_set)
+                self.set_re_analysis_result(
+                    re_analysis_moiety=2, idx=idx, score_d=score_dict)
+        if dbs_3:
+            c_num = self.temp_lipid_info['Each moiety info']['chain-3']
+            db_num = self.temp_lipid_info['Each moiety info']['db-3']
+            sph_set = [False, c_num]
+            for comb in dbs_3:
+                ref_oad_d = ReAnalyzer.generate_ref_oad_nl_and_type(
+                    each_comb=comb, ontology=ontology, deuterium=deuterium)
+                re_anal_bool = ReAnalyzer.query_essential_diagnostic_ions(
+                    df=self.temp_msms_df, ref_oad_dict=ref_oad_d, 
+                    db_in_SPB=db_in_SPB, c_num=c_num, db_num=db_num,
+                    tolerance=ms_tol,
+                    must_nl_cut_off_dict=self.must_nl_cut_off_dict,
+                    structure_dict=self.temp_lipid_info)
+                score_dict = ReAnalyzer.calc_presence_ratios_and_score(
+                    ref_oad_dict=ref_oad_d, cut_df=self.temp_msms_df,
+                    ref_precursor_mz=ref_mz, ms_tol_ppm=self.ms_tolerance_ppm,
+                    sph_set=sph_set)
+                self.set_re_analysis_result(
+                    re_analysis_moiety=3, idx=idx, score_d=score_dict)
+        pprint.pprint(self.oad_result_dict[idx])
+        self.update_db_trees(result_dict=self.oad_result_dict[idx])
+        self.focus_and_select_db_trees()
+        time.sleep(0.1)
         self.temp_prgbar.close_window()
+    
+    def set_re_analysis_result(self, re_analysis_moiety, idx, score_d):
+        unsaturated_moiety_num = self.temp_lipid_info['Unsaturated moiety']
+        moiety_info = self.temp_lipid_info['Each moiety info']
+        moiety_num = self.temp_lipid_info['Valid moiety num']
+        if unsaturated_moiety_num == 1:
+            #ex) LPC 18:1, PI 18:0_20:4, TG 14:0_16:0_18:1
+            key = 'Moiety-1'
+        if unsaturated_moiety_num == 2:
+            if re_analysis_moiety == 1:
+                #ex) PC 18:1_18:2, TG 14:0_16:1_18:1
+                key = 'Moiety-1'
+            if re_analysis_moiety == 2:
+                if moiety_num == 2:
+                    key = 'Moiety-2'
+                if moiety_num == 3:
+                    if moiety_info['db-1'] > 0:
+                        key = 'Moiety-2'
+                    else:
+                        key = 'Moiety-1'
+            if re_analysis_moiety == 3:
+                key = 'Moiety-2'
+        if unsaturated_moiety_num == 3:
+            #ex) TG 14:1_16:1_18:1, Cer 18:1;2O/32:1(O-18:2)
+            key = f'Moiety-{re_analysis_moiety}'
+        moiety = self.oad_result_dict[idx][key]
+        if moiety:
+            last = len(moiety)-1
+            self.oad_result_dict[idx][key][last] = score_d[0]
+        else:
+            self.oad_result_dict[idx][key][0] = score_d[0]
+            self.oad_result_dict[idx][key]['Determined db'] = score_d[0]
+
+    def check_ion_lacking_pos(self):
+        pass
 
     #endregion
 
@@ -2331,7 +2462,6 @@ class ReAnalysisWindow(object):
         chain1, lock1 = 'none', True
         chain2, lock2 = 'none', True
         chain3, lock3 = 'none', True
-        print(self.structure_info)
         if chain_num >= 1:
             chain1, lock1 = get_moiety_str(moiety_d['chain-1'],moiety_d['db-1'])
         if chain_num >= 2:
@@ -2362,6 +2492,9 @@ class ReAnalysisWindow(object):
         if lock3:
             self.text3['state'] = tk.DISABLED
             self.text3['bg'] = lock_color
+
+    def check_duplicates(self):
+        pass
 
     def center_position(self, win, width, height):
         x = (win.winfo_screenwidth() // 2) - (width // 2)

@@ -2465,7 +2465,6 @@ def determine_oad_metabolite_name_N_description(oad_result_dict, structure_dict,
         oad_name = rep_name.replace('target1', db_sol_1).replace('target2', db_sol_2).replace('target3', db_sol_3)
     return oad_name
 
-# @numba.jit
 def get_oad_similarity_score(act_presence_rate, act_ratio_sum):
     # ref_ratio_sum = sum(list(ref_oad_nl_ratio_dict.values()))
     oad_similarity_score = round(act_presence_rate*act_ratio_sum, 1)

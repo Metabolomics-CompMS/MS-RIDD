@@ -54,7 +54,7 @@ ref_oad_ratio = {'OAD01': 0.10, 'OAD02': 0.25, 'OAD03': 0.50, 'OAD04': 0.01,
 #endregion
 
 def generate_ref_oad_nl_and_type(each_comb, ontology, deuterium):
-    ref_oad_d = {}
+    ref_oad_d, tag_and_nl = {}, {}
     c_ms, c13_ms, o_ms = ex_mass['C'], ex_mass['13C'], ex_mass['O']
     h_ms, d_ms = ex_mass['H'], ex_mass['D']
     h2o_ms = ex_mass['H2O']
@@ -104,38 +104,39 @@ def generate_ref_oad_nl_and_type(each_comb, ontology, deuterium):
         post_L2H = c_ms*(pos+1)+2*h_ms*(pos)+2*h_ms-ms_sht+dHs
         #endregion
 
-        ref_oad_d[f'n-{pos}/dis@n-{pos-1}/+O+H/OAD01'] = pre_mnO_AH
-        ref_oad_d[f'n-{pos}/dis@n-{pos-1}/+O/OAD02'] = pre_mnO
-        ref_oad_d[f'n-{pos}/dis@n-{pos-1}/+O-H/OAD03'] = pre_mnO_LH
-        ref_oad_d[f'n-{pos}/dis@n-{pos-1}/+O-2H/OAD04'] = pre_mnO_L2H
-        ref_oad_d[f'n-{pos}/dis@n-{pos-1}/+O+H-H2O/OAD05'] = pre_mnO_AH_H2O
-        ref_oad_d[f'n-{pos}/dis@n-{pos-1}/+O-H2O/OAD06'] = pre_mnO_H2O
-        ref_oad_d[f'n-{pos}/dis@n-{pos-1}/+O-H-H2O/OAD07'] = pre_mnO_LH_H2O
+        tag_and_nl[f'n-{pos}/dis@n-{pos-1}/+O+H/OAD01'] = pre_mnO_AH
+        tag_and_nl[f'n-{pos}/dis@n-{pos-1}/+O/OAD02'] = pre_mnO
+        tag_and_nl[f'n-{pos}/dis@n-{pos-1}/+O-H/OAD03'] = pre_mnO_LH
+        tag_and_nl[f'n-{pos}/dis@n-{pos-1}/+O-2H/OAD04'] = pre_mnO_L2H
+        tag_and_nl[f'n-{pos}/dis@n-{pos-1}/+O+H-H2O/OAD05'] = pre_mnO_AH_H2O
+        tag_and_nl[f'n-{pos}/dis@n-{pos-1}/+O-H2O/OAD06'] = pre_mnO_H2O
+        tag_and_nl[f'n-{pos}/dis@n-{pos-1}/+O-H-H2O/OAD07'] = pre_mnO_LH_H2O
 
-        ref_oad_d[f'n-{pos}/dis@n-{pos}/+O/OAD08'] = exa_mnO
-        ref_oad_d[f'n-{pos}/dis@n-{pos}/none/OAD09'] = exa
-        ref_oad_d[f'n-{pos}/dis@n-{pos}/-H/OAD10'] = exa_LH
-        ref_oad_d[f'n-{pos}/dis@n-{pos}/-2H/OAD11'] = exa_L2H
-        ref_oad_d[f'n-{pos}/dis@n-{pos+1}/+O-H/OAD12'] = post_mnO_LH
-        ref_oad_d[f'n-{pos}/dis@n-{pos+1}/+O-2H/OAD13'] = post_mnO_L2H
-        ref_oad_d[f'n-{pos}/dis@n-{pos+1}/+H/OAD14'] = post_AH
-        ref_oad_d[f'n-{pos}/dis@n-{pos+1}/none/OAD15'] = post
-        ref_oad_d[f'n-{pos}/dis@n-{pos+1}/-H/OAD16'] = post_LH
-        ref_oad_d[f'n-{pos}/dis@n-{pos+1}/-2H/OAD17'] = post_L2H
+        tag_and_nl[f'n-{pos}/dis@n-{pos}/+O/OAD08'] = exa_mnO
+        tag_and_nl[f'n-{pos}/dis@n-{pos}/none/OAD09'] = exa
+        tag_and_nl[f'n-{pos}/dis@n-{pos}/-H/OAD10'] = exa_LH
+        tag_and_nl[f'n-{pos}/dis@n-{pos}/-2H/OAD11'] = exa_L2H
+        tag_and_nl[f'n-{pos}/dis@n-{pos+1}/+O-H/OAD12'] = post_mnO_LH
+        tag_and_nl[f'n-{pos}/dis@n-{pos+1}/+O-2H/OAD13'] = post_mnO_L2H
+        tag_and_nl[f'n-{pos}/dis@n-{pos+1}/+H/OAD14'] = post_AH
+        tag_and_nl[f'n-{pos}/dis@n-{pos+1}/none/OAD15'] = post
+        tag_and_nl[f'n-{pos}/dis@n-{pos+1}/-H/OAD16'] = post_LH
+        tag_and_nl[f'n-{pos}/dis@n-{pos+1}/-2H/OAD17'] = post_L2H
         if ontology in lipidclass_dict['Sphingolipids']:
-            ref_oad_d[f'n-{pos}/dis@n-{pos+1}/-H2O/OAD18'] \
+            tag_and_nl[f'n-{pos}/dis@n-{pos+1}/-H2O/OAD18'] \
             = post + h2o_ms
-            ref_oad_d[f'n-{pos}/dis@n-{pos+1}/-H-H2O/OAD19'] \
+            tag_and_nl[f'n-{pos}/dis@n-{pos+1}/-H-H2O/OAD19'] \
             = post_LH + h2o_ms
-            ref_oad_d[f'n-{pos}/dis@n-{pos+1}/-2H-H2O/OAD20'] \
+            tag_and_nl[f'n-{pos}/dis@n-{pos+1}/-2H-H2O/OAD20'] \
             = post_L2H + h2o_ms
         mass_shift_counter += 1
+    ref_oad_d[each_comb] = tag_and_nl
     return ref_oad_d
 
-
-def query_essential_diagnostic_ions(df, ref_oad_dict, db_in_sphingobase,
-    c_num, db_num, for_range, tolerance, must_nl_cut_off_dict, structure_dict):
+def query_essential_diagnostic_ions(df, ref_oad_dict, db_in_SPB,
+    c_num, db_num, tolerance, must_nl_cut_off_dict, structure_dict):
     tol = tolerance
+    for_range = range(0, db_num)
     frag = 'frag m/z'
     diagnostic_nl_dict = {}
     ontology = structure_dict['Ontology']
@@ -150,8 +151,10 @@ def query_essential_diagnostic_ions(df, ref_oad_dict, db_in_sphingobase,
     if ontology not in lipidclass_dict['Sphingolipids']:
         for pos, tag_and_nl in ref_oad_dict.items():
             each_pos_bool = []
-            tags_of_dgn_1 = [f'n-{each}/dis@n-{each-1}/+O-H/OAD03' for each in pos]
-            tags_of_dgn_2 = [f'n-{each}/dis@n-{each+1}/-H/OAD16' for each in pos]
+            tags_of_dgn_1 = [f'n-{each}/dis@n-{each-1}/+O-H/OAD03' 
+                             for each in pos]
+            tags_of_dgn_2 = [f'n-{each}/dis@n-{each+1}/-H/OAD16' 
+                             for each in pos]
             dgn_1_nls = [tag_and_nl[tag] for tag in tags_of_dgn_1]
             dgn_2_nls = [tag_and_nl[tag] for tag in tags_of_dgn_2]
             head_dgn_1_mzs = [ref_mz - nl - tol for nl in dgn_1_nls]
@@ -175,7 +178,7 @@ def query_essential_diagnostic_ions(df, ref_oad_dict, db_in_sphingobase,
                     each_pos_bool.append(False)
             diagnostic_nl_dict[pos] = each_pos_bool
     else:
-        if db_in_sphingobase:
+        if db_in_SPB:
             last_loop = db_num -1
             for pos, tag_and_nl in ref_oad_dict.items():
                 each_pos_bool = []
@@ -324,3 +327,197 @@ def query_essential_diagnostic_ions(df, ref_oad_dict, db_in_sphingobase,
                         each_pos_bool.append(False)
                 diagnostic_nl_dict[pos] = each_pos_bool
     return diagnostic_nl_dict
+
+def calc_presence_ratios_and_score(ref_oad_dict, cut_df, ref_precursor_mz, 
+    ms_tol_ppm, sph_set):
+    counter = 0
+    score_dict = {}
+    tol = math_floor(ms_tol_ppm*ref_precursor_mz/(1000*1000), 6)
+    def get_n_discription(txt):
+        if ',)' in txt:
+            edit = 'n-' + txt.replace('(', '').replace(',)', '')
+        else:
+            edit = 'n-' + txt.replace('(', '').replace(')', '').replace(' ', '')
+        return edit
+    for positions, tag_and_nl in ref_oad_dict.items():
+        presence_counter, ratio_sum = 0, 0
+        next_to_3oh = sph_set[0] and ((sph_set[1]-positions[-1]) == 4)
+        each_score_d = {'Positions': '', 'N-discription': '',
+                        'Score': 0, 'Ratio sum': 0, 'Presence': 0,
+                        'Notice': 'ReAnalysis', 'Measured peaks': [],
+                        'Ref peaks': [], 'Peaks dict': {}}
+        # Measured peaks: [[Measured m/z, Measured ratio, ppm], [...]]
+        # Ref peaks: [[OAD type, Ref m/z, Ref NL, Ref ratio], [...]]
+        # Peaks dict = {'n-9/dis@n-8/+O/OAD03': [Ref m/z, Ref delta, 
+        #                                        Measured m/z, 
+        #                                        Measured ratio, ppm]}
+        peaks_dict = {}
+        ref_peaks, measured_peaks = [], []
+        for tag, ref_nl in tag_and_nl.items():
+            db = int(tag.split('/')[0].replace('n-', ''))
+            ref_mz = math_floor((ref_precursor_mz - ref_nl), 4)
+            if next_to_3oh and db == positions[-1]:
+                tag_num = int(tag.split('OAD')[-1])
+                if tag_num >= 15:
+                    mz, ratio, ppm = query_matched_ion_by_ppm(cut_df, ref_mz, tol)
+                else: continue
+            else:
+                mz, ratio, ppm = query_matched_ion_by_ppm(cut_df, ref_mz, tol)
+            if mz > 0:
+                presence_counter += 1
+                ratio_sum += ratio
+            peaks_dict[tag] = [ref_mz, ref_nl, mz, ratio, ppm]
+        #region Rel int ratio
+        # base_peaks = []
+        # for key, v in peaks_dict.items():
+        #     oad_type = key.split('/')[-1]
+        #     if oad_type == 'OAD03': base_peaks.append(v[3])
+        # if next_to_3oh and len(positions) == 1:
+        #     for key, v in peaks_dict.items():
+        #         #append -> [OAD type, Ref m/z, Ref NL, Ref ratio]
+        #         oad_type = key.split('/')[-1]
+        #         ref_peaks.append([key, v[0], v[1], ref_oad_ratio[oad_type]])
+        #         if v[2] > 0: #[Measured m/z, Measured ratio, ppm]
+        #             measured_peaks.append([v[2], v[3], v[4]])
+        # else:
+        #     base_ratio = statistics.mean(base_peaks)
+        #     for key, v in peaks_dict.items():
+        #         #append -> [OAD type, Ref m/z, Ref NL, Ref ratio]
+        #         oad_type = key.split('/')[-1]
+        #         ref_peaks.append([key, v[0], v[1], 
+        #                         get_rel_ratio(base_ratio, oad_type)])
+        #         if v[2] > 0: #[Measured m/z, Measured ratio, ppm]
+        #             measured_peaks.append([v[2], v[3], v[4]])
+        #endregion
+        for key, v in peaks_dict.items():
+            #append -> [OAD type, Ref m/z, Ref NL, Ref ratio]
+            ref_ratio = get_ref_ratio_via_db_position(positions, key)
+            ref_peaks.append([key, v[0], v[1], ref_ratio])
+            if v[2] > 0: #[Measured m/z, Measured ratio, ppm]
+                measured_peaks.append([v[2], v[3], v[4]])
+        each_score_d['Positions'] = positions
+        each_score_d['N-discription'] = get_n_discription(str(positions))
+        each_score_d['Measured peaks'] = measured_peaks
+        each_score_d['Ref peaks'] = ref_peaks
+        each_score_d['Peaks dict'] = peaks_dict
+        presence = math_floor(presence_counter/len(tag_and_nl)*100, 4)
+        ratio_sum = math_floor(ratio_sum, 4)
+        acts, refs = construct_ratio_vec(peaks_dict, ref_peaks)
+        # acts, refs = constrcut_ranking_vec(peaks_dict, ref_peaks)
+        each_score_d['Score'] = get_msms_similarity_score(acts, refs)
+        each_score_d['Ratio sum'] = ratio_sum
+        each_score_d['Presence'] = presence
+        score_dict[counter] = each_score_d
+        counter += 1
+    return score_dict
+
+def get_ref_ratio_via_db_position(positions, key):
+    pre = ['OAD01', 'OAD02', 'OAD03', 'OAD04', 'OAD05', 'OAD06', 'OAD07']
+    post = ['OAD15', 'OAD16', 'OAD17']
+    db_num, oad_type = len(positions), key.split('/')[-1]
+    db_delta = [positions[i+1]-positions[i] for i in range(db_num-1)]
+    if 2 in db_delta: # delta == 2 -> Conjugated C=C, ex) n-7,9
+        conj_pos = db_delta.index(2)
+        conj_start = f'n-{positions[conj_pos]}'
+        conj_end = f'n-{positions[conj_pos+1]}'
+        if ((key.startswith(conj_start) and oad_type in post) or
+            (key.startswith(conj_end) and oad_type in pre)):
+            ref_ratio = 0.015
+            return ref_ratio
+    first_db, last_db = f'n-{positions[0]}', f'n-{positions[-1]}'
+    half_pre = (db_num >= 3 and key.startswith(first_db) and oad_type in pre)
+    half_post = (db_num >= 3 and key.startswith(last_db) and oad_type in post)
+    ref_ratio = ref_oad_ratio[oad_type]
+    if half_pre or half_post:
+        ref_ratio = math_floor(ref_ratio/2, 3)
+    return ref_ratio
+
+def query_matched_ion_by_ppm(cut_df, ref_mz, tol):
+    calc_ppm = lambda mz, ref: math_floor(abs((mz-ref)/ref*1000*1000), 2)
+    start, end = ref_mz-tol, ref_mz+tol
+    ex_df = cut_df[(cut_df['frag m/z'] >= start) & (cut_df['frag m/z'] <= end)]
+    if len(ex_df) == 1:
+        mz, ratio = ex_df['frag m/z'].values[0], ex_df['Ratio(%)'].values[0]
+        ppm = calc_ppm(mz, ref_mz)
+    elif len(ex_df) >= 2:
+        mzs, ratios = ex_df['frag m/z'].values, ex_df['Ratio(%)'].values
+        ppms = [calc_ppm(mz, ref_mz) for mz in mzs]
+        li = [[mz, ratio, ppm] for mz, ratio, ppm in zip(mzs, ratios, ppms)]
+        s_li = sorted(li, key=lambda x: x[2])
+        mz, ratio, ppm = s_li[0][0], s_li[0][1], s_li[0][2]
+    else:
+        mz, ratio, ppm = 0, 0, 0
+    return mz, ratio, ppm
+
+def construct_ratio_vec(peaks_dict, ref_peaks):
+    # Peaks dict = {'n-9/dis@n-8/+O/OAD03': 
+    #               [Ref m/z, Ref delta, Measured m/z, Measured ratio, ppm]}
+    # ref_peaks = [[OAD type, Ref m/z, Ref NL, Ref ratio], ...]
+    sort_peaks = dict(sorted(peaks_dict.items(), key=lambda x: x[1][0]))
+    ratio_dict = {v[0]: {'Measured': 0, 'Ref': 0} for v in sort_peaks.values()}
+    for key, v in sort_peaks.items():
+        # oad, ref_mz = key.split('/')[-1], v[0]
+        ref_mz = v[0]
+        ratio_dict[ref_mz]['Measured'] = math_floor(v[3], 4)
+        ref_ratio = [li[3] for li in ref_peaks if li[0] == key][0]
+        stacked_ratio = math_floor(ref_ratio+ratio_dict[ref_mz]['Ref'], 2)
+        ratio_dict[ref_mz]['Ref'] = stacked_ratio
+    acts = [v['Measured'] for v in ratio_dict.values()]
+    refs = [v['Ref'] for v in ratio_dict.values()]
+    return acts, refs
+
+def get_msms_similarity_score(acts, refs):
+    # acts = [v[3] for v in peaks_dict.values()]
+    # nozero_acts = [v[3] for v in peaks_dict.values() if v[3] > 0]
+    # refs = [ref_oad_ratio[tag.split('/')[-1]] for tag in peaks_dict.keys()]
+    nozero_acts = [v for v in acts if v > 0]
+    try:
+        act_min_digit = len(str(min(nozero_acts)).split('.')[1])
+    except:
+        act_min_digit = 0
+    ref_min_digit = len(str(min(refs)).split('.')[1])
+    digit = act_min_digit if act_min_digit >= ref_min_digit else ref_min_digit
+    acts = [int(v*10**digit) for v in acts]
+    refs = [int(v*10**digit) for v in refs]
+    if sum(acts) > 0 and sum(refs):
+        # rev_dotp = calc_dot_product(acts, refs)
+        # score = math_floor(rev_dotp, 2)
+        sim = calc_similarity_score(acts, refs)
+        score = math_floor(sim, 2)
+        # score = math_floor(rev_dotp+sim, 2)
+    else: score = 0
+    return score
+
+def calc_dot_product(acts, refs):
+    dotp =  lambda acts, refs: sum(act*ref for act, ref in zip(acts, refs))**2
+    scalar = lambda vec: sum(v**2 for v in vec)
+    dotp_sml = lambda acts, refs: dotp(acts, refs)/(scalar(acts)*scalar(refs))
+    score = dotp_sml(acts, refs)*1000
+    return score
+
+def calc_similarity_score(acts, refs):
+    sqrt_dotp =  lambda acts, refs: sum(math.sqrt(act*ref) for act, ref in zip(acts, refs))
+    scalar = lambda vec: sum(vec)
+    sim = lambda acts, refs: sqrt_dotp(acts, refs)/math.sqrt(scalar(acts)*scalar(refs))
+    score = sim(acts, refs)*1000
+    return score
+
+
+
+
+
+#region Utilities
+def math_floor(num, digit):
+    floored = math.floor(num*10**digit)/(10**digit)
+    return floored
+
+#endregion
+
+
+
+
+
+
+
+
+
