@@ -2,13 +2,10 @@ import copy
 import datetime
 from functools import wraps
 from glob import glob
-import itertools
-import logging
 import math
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (
     FigureCanvasTkAgg, NavigationToolbar2Tk)
-import numpy as np
 import os
 import pandas as pd
 import pickle
@@ -24,9 +21,6 @@ from tkinter import ttk
 import traceback
 import statistics
 import time
-
-# logging.basicConfig(
-#     level=logging.DEBUG, format='%(threadName)s: %(message)s')
 
 
 import openpyxl
@@ -430,7 +424,8 @@ class MSRIDD_GUI(tk.Frame):
             # result setting
             self.target_table = spectrum_analyzer.target_table
             self.msms_dict = spectrum_analyzer.msms_dict
-            self.lipid_structural_info_dict = spectrum_analyzer.lipid_structural_info_dict
+            self.lipid_structural_info_dict \
+            = spectrum_analyzer.lipid_structural_info_dict
             self.cid_result_dict = spectrum_analyzer.cid_result_dict
             self.oad_result_dict = spectrum_analyzer.oad_result_dict
             self.graph_dict = spectrum_analyzer.graph_dict
@@ -443,7 +438,7 @@ class MSRIDD_GUI(tk.Frame):
         except Exception as e:
             self.data_analysis_running = False
             self.section_report.set("--- Error occurred ---")
-            messagebox.showwarning(
+            messagebox.showerror(
                 "Error message", 
                 """Error has occurred while the analysis, 
                    please confirm input data.""")
@@ -582,7 +577,8 @@ class MSRIDD_GUI(tk.Frame):
             # result setting
             self.target_table = spectrum_analyzer.target_table
             self.msms_dict = spectrum_analyzer.msms_dict
-            self.lipid_structural_info_dict = spectrum_analyzer.lipid_structural_info_dict
+            self.lipid_structural_info_dict \
+            = spectrum_analyzer.lipid_structural_info_dict
             self.cid_result_dict = spectrum_analyzer.cid_result_dict
             self.oad_result_dict = spectrum_analyzer.oad_result_dict
             self.graph_dict = spectrum_analyzer.graph_dict
@@ -595,7 +591,10 @@ class MSRIDD_GUI(tk.Frame):
         except Exception as e:
             self.data_analysis_running = False
             self.section_report.set("--- Error occurred ---")
-            messagebox.showwarning("Error message", "Error has occurred while the analysis, please confirm input data.")
+            messagebox.showerror(
+                "Error message", 
+                """Error has occurred while the analysis, 
+                   please confirm input data.""")
             messagebox.showwarning("Error details", "{}".format(e))
             traceback.print_exc()
         print(f'Process time: {time.time() - start:.3f} [sec]')
@@ -740,7 +739,7 @@ class MSRIDD_GUI(tk.Frame):
         self.export_path_btn.place(x=580, y=18)
         # txt file check
         self.txt_export_bool = tk.BooleanVar()
-        self.txt_export_bool.set(True)
+        self.txt_export_bool.set(False)
         self.txt_export_check = ttk.Checkbutton(
             self.export_window, text="Result sheet (.txt)", 
             variable=self.txt_export_bool)
@@ -754,7 +753,7 @@ class MSRIDD_GUI(tk.Frame):
         self.excel_export_check.place(x=190, y=68)
         # pptx file check
         self.pptx_export_bool = tk.BooleanVar()
-        self.pptx_export_bool.set(True)
+        self.pptx_export_bool.set(False)
         self.pptx_export_check = ttk.Checkbutton(
             self.export_window, text="MS/MS figures (.pptx)", 
             variable=self.pptx_export_bool)
@@ -792,8 +791,12 @@ class MSRIDD_GUI(tk.Frame):
             self.start_export()    
 
     def start_export(self):
-        thread_1 = threading.Thread(target=self.export_analysis_data)
-        thread_2 = threading.Thread(target=self.create_export_prgbar_window)
+        self.temp_vert_prgbar = VerticalProgressBars(
+            master=self.master, title="Result export in progress",
+            start_text="Start exporting")
+        thread_1 = threading.Thread(
+            target=self.start_vertical_prgbar_window)
+        thread_2 = threading.Thread(target=self.export_analysis_data)
         thread_1.start()
         thread_2.start()
 
@@ -803,37 +806,76 @@ class MSRIDD_GUI(tk.Frame):
         txt_bool = self.txt_export_bool.get()
         excel_bool = self.excel_export_bool.get()
         pptx_bool = self.pptx_export_bool.get()
-        # heatmap_bool = self.nl_heatmap_export_bool.get()
         self.export_window.destroy()
+        sections = [txt_bool, excel_bool, pptx_bool, pptx_bool].count(True)
+        self.temp_vert_prgbar.section_report.set("Start export")
+        self.temp_vert_prgbar.section_bar["maximum"] = sections+1
         if txt_bool:
-            pass
+            self.temp_vert_prgbar.each_prgbar["value"] = 0
+            self.temp_vert_prgbar.each_prgbar["maximum"] = 100
+            self.temp_vert_prgbar.section_report.set(
+                "Exporting result table of text format")
+            time.sleep(2)
+            self.temp_vert_prgbar.section_bar.step(1)
+            text_sheet_exporter(path=export_path, 
+                target_table=self.target_table, cid=self.cid_result_dict, 
+                oad=self.oad_result_dict, 
+                structure_info=self.lipid_structural_info_dict, 
+                normalized=self.normalized_data, stamp=self.user_prefix)
+            self.temp_vert_prgbar.each_prgbar.step(99)
+            time.sleep(2)
         if excel_bool:
+            self.temp_vert_prgbar.each_prgbar["value"] = 0
+            self.temp_vert_prgbar.each_prgbar["maximum"] \
+                = len(self.target_table)+1
+            self.temp_vert_prgbar.section_report.set(
+                "Exporting analysis report (.xlsx)")
             excel_sheet_exporter2(path=export_path, 
                 target_table=self.target_table,
                 msms=self.msms_dict, cid=self.cid_result_dict, 
                 oad=self.oad_result_dict, 
                 structure_info=self.lipid_structural_info_dict, 
-                normalized=self.normalized_data, stamp=self.user_prefix)
+                normalized=self.normalized_data, stamp=self.user_prefix,
+                each_bar=self.temp_vert_prgbar.each_prgbar,
+                each_rep=self.temp_vert_prgbar.each_report)
+            self.temp_vert_prgbar.section_bar.step(1)
+            time.sleep(2)
         if pptx_bool:
+            self.temp_vert_prgbar.section_bar.step(1)
+            self.temp_vert_prgbar.each_prgbar["value"] = 0
+            self.temp_vert_prgbar.each_prgbar["maximum"] \
+                = 2*len(self.target_table)+1
+            self.temp_vert_prgbar.section_report.set(
+                "Generating OAD-MS/MS figures")
             generate_msms_figures(path=export_path, msms_dict=self.msms_dict, 
                 cid=self.cid_result_dict, oad=self.oad_result_dict,
                 structure_info=self.lipid_structural_info_dict, 
-                graph=self.graph_dict, stamp=self.user_prefix)
+                graph=self.graph_dict, stamp=self.user_prefix,
+                each_bar=self.temp_vert_prgbar.each_prgbar,
+                each_rep=self.temp_vert_prgbar.each_report)
+            self.temp_vert_prgbar.section_report.set(
+                "Saving OAD-MS/MS figures (.pptx)")
+            self.temp_vert_prgbar.section_bar.step(1)
             save_msms_fig_as_pptx(path=export_path, stamp=self.user_prefix, 
-                target_table=self.target_table)
-        # if heatmap_bool:
-        #     start = time.time()
-        #     generate_heatmap_of_nl(path=export_path, 
-        #         target_table=self.target_table, msms=self.msms_dict, 
-        #         stamp=self.user_prefix)
-        #     required_time = time.time() - start
-        #     print(f'Required time: {required_time} [sec]')
-        print(f'Required time: {time.time() - start:.3f} [sec]')
-        self.temp_prgbar.close_window()
+                target_table=self.target_table,
+                each_bar=self.temp_vert_prgbar.each_prgbar,
+                each_rep=self.temp_vert_prgbar.each_report)
+            time.sleep(1)
+        self.temp_vert_prgbar.section_report.set("Export completed.")
+        self.temp_vert_prgbar.section_bar.step(0.99)
+        time.sleep(2)
+        print(f'Export required time: {time.time() - start:.3f} [sec]')
+        self.temp_vert_prgbar.running = False
+        self.temp_vert_prgbar.close_window()
+        # self.temp_prgbar.close_window()
     
+    def start_vertical_prgbar_window(self):
+        self.temp_vert_prgbar.process_timer()
+        
     def create_export_prgbar_window(self):
         self.temp_prgbar = ProgressBar(self.master,
-            title="Result export in progress", detail="--- Result exporting ---")
+            title="Result export in progress", 
+            detail="--- Result exporting ---")
 
     #endregion
 
@@ -865,15 +907,19 @@ class MSRIDD_GUI(tk.Frame):
         section_label.place(x=30, y=55)
         # Timer
         self.section_timer = tk.StringVar()
-        self.section_timer_label = ttk.Label(self.progressbar_window, textvariable=self.section_timer, font=("", 14))
+        self.section_timer_label = ttk.Label(
+            self.progressbar_window, 
+            textvariable=self.section_timer, font=("", 14))
         self.section_timer_label.place(x=580, y=28)
         self.section_timer.set("00:00:00")
         # Each progress
-        self.each_prgbar = ttk.Progressbar(self.progressbar_window, orient='horizontal', length=620, mode='determinate')
+        self.each_prgbar = ttk.Progressbar(self.progressbar_window, 
+            orient='horizontal', length=620, mode='determinate')
         self.each_prgbar.place(x=30, y=90)
         self.each_report = tk.StringVar()
         self.each_report.set("")
-        each_label = ttk.Label(self.progressbar_window, textvariable=self.each_report, font=("", 14))
+        each_label = ttk.Label(self.progressbar_window, 
+            textvariable=self.each_report, font=("", 14))
         each_label.place(x=30, y=115)
         # Timer
         self.small_timer = tk.StringVar()
@@ -963,7 +1009,7 @@ class MSRIDD_GUI(tk.Frame):
         #                'Validated num': 0 ~ 3,
         #                'Each bools': [True, False, ...], 
         #                'Moiety-1': {0: {'Positions': '',
-        #                                 'N-discription': '',
+        #                                 'N-description': '',
         #                                 'Score': float,
         #                                 'Ratio sum': float,
         #                                 'Presence': float,
@@ -972,7 +1018,7 @@ class MSRIDD_GUI(tk.Frame):
         #                                },
         #                             1: {....},
         #                             'Determined db: {'Positions': '',
-        #                                              'N-discription': '',
+        #                                              'N-description': '',
         #                                              'Score': float,
         #                                              'Ratio sum': float,
         #                                              'Presence': float,
@@ -1016,8 +1062,19 @@ class MSRIDD_GUI(tk.Frame):
             moiety_1 = result_dict['Moiety-1']
             moiety_2 = result_dict['Moiety-2']
             moiety_3 = result_dict['Moiety-3']
-        #endregion
         self.update_db_trees(result_dict=result_dict, is_first=is_first)
+        if moiety_1 and moiety_1[0]:
+            self.db_1 = moiety_1[0]['N-description']
+        else:
+            self.db_1 = ''
+        if moiety_2 and moiety_2[0]:
+            self.db_2 = moiety_2[0]['N-description']
+        else:
+            self.db_2 = ''
+        if moiety_3 and moiety_3[0]:
+            self.db_3 = moiety_3[0]['N-description']
+        else:
+            self.db_3 = ''
         self.focus_and_select_db_trees()
         #endregion
         #region Update total MS/MS fig
@@ -1028,13 +1085,13 @@ class MSRIDD_GUI(tk.Frame):
         self.update_oad_msms_fig_with_ref(
             dict_1=moiety_1, dict_2=moiety_2, dict_3=moiety_3)
         if is_first:
-            """ func(self.partially_update_data) occurs 3 times unnecessarily
-                due to the binding problem """
+            # func(self.partially_update_data) occurs 3 times unnecessarily
+            # due to the binding problem
             self.db_candidates_frame.bind_class(
                 "Treeview", "<<TreeviewSelect>>", self.partially_update_data)
         #endregion
 
-    def update_db_trees(self, result_dict, is_first=False):
+    def update_db_trees(self, result_dict, is_first=False, masstable=True):
         result_dict_len = len(result_dict)
         moiety_1, moiety_2, moiety_3 = {}, {}, {}
         if result_dict_len == 4:
@@ -1044,12 +1101,14 @@ class MSRIDD_GUI(tk.Frame):
                     tree_no=1, data=moiety_1, is_first=is_first)
                 self.fill_in_nan_on_db_trees(
                     db_2=True, db_3=True, is_first=is_first)
-                self.fill_in_matched_fragment_ions_tree(
-                    moiety_1=moiety_1[0], is_first=is_first)
+                if masstable:
+                    self.fill_in_matched_fragment_ions_tree(
+                        moiety_1=moiety_1[0], is_first=is_first)
             else:
                 self.fill_in_nan_on_db_trees(
                     db_1=True, db_2=True, db_3=True, is_first=is_first)
-                self.fill_in_matched_fragment_ions_tree(is_first=is_first)
+                if masstable:
+                    self.fill_in_matched_fragment_ions_tree(is_first=is_first)
         elif result_dict_len == 5:
             moiety_1 = result_dict['Moiety-1']
             moiety_2 = result_dict['Moiety-2']
@@ -1060,26 +1119,10 @@ class MSRIDD_GUI(tk.Frame):
                     tree_no=2, data=moiety_2, is_first=is_first)
                 self.fill_in_nan_on_db_trees(
                     db_3=True, is_first=is_first)
-                self.fill_in_matched_fragment_ions_tree(moiety_1=moiety_1[0], 
-                    moiety_2=moiety_2[0], is_first=is_first)
-            elif moiety_2:
-                self.fill_in_data_on_db_tree(
-                    tree_no=2, data=moiety_2, is_first=is_first)
-                self.fill_in_nan_on_db_trees(
-                    db_1=True, db_3=True, is_first=is_first)
-                self.fill_in_matched_fragment_ions_tree(
-                    moiety_2=moiety_2[0], is_first=is_first)
-            elif moiety_1:
-                self.fill_in_data_on_db_tree(
-                    tree_no=1, data=moiety_1, is_first=is_first)
-                self.fill_in_nan_on_db_trees(
-                    db_2=True, db_3=True, is_first=is_first)
-                self.fill_in_matched_fragment_ions_tree(
-                    moiety_1=moiety_1[0], is_first=is_first)
-            else:
-                self.fill_in_nan_on_db_trees(
-                    db_1=True, db_2=True, db_3=True, is_first=is_first)
-                self.fill_in_matched_fragment_ions_tree(is_first=is_first)
+                if masstable:
+                    self.fill_in_matched_fragment_ions_tree(
+                        moiety_1=moiety_1[0], moiety_2=moiety_2[0], 
+                        is_first=is_first)
         elif result_dict_len == 6:
             moiety_1 = result_dict['Moiety-1']
             moiety_2 = result_dict['Moiety-2']
@@ -1091,60 +1134,10 @@ class MSRIDD_GUI(tk.Frame):
                     tree_no=2, data=moiety_2, is_first=is_first)
                 self.fill_in_data_on_db_tree(
                     tree_no=3, data=moiety_3, is_first=is_first)
-                self.fill_in_matched_fragment_ions_tree(moiety_1=moiety_1[0], 
-                    moiety_2=moiety_2[0], moiety_3=moiety_3[0], is_first=is_first)
-            elif moiety_2 and moiety_3:
-                self.fill_in_data_on_db_tree(
-                    tree_no=2, data=moiety_2, is_first=is_first)
-                self.fill_in_data_on_db_tree(
-                    tree_no=3, data=moiety_3, is_first=is_first)
-                self.fill_in_nan_on_db_trees(db_1=True, is_first=is_first)
-                self.fill_in_matched_fragment_ions_tree(moiety_2=moiety_2[0], 
-                    moiety_3=moiety_3[0], is_first=is_first)
-            elif moiety_1 and moiety_3:
-                self.fill_in_data_on_db_tree(
-                    tree_no=1, data=moiety_1, is_first=is_first)
-                self.fill_in_data_on_db_tree(
-                    tree_no=3, data=moiety_3, is_first=is_first)
-                self.fill_in_nan_on_db_trees(db_2=True, is_first=is_first)
-                self.fill_in_matched_fragment_ions_tree(moiety_1=moiety_1[0], 
-                    moiety_3=moiety_3[0], is_first=is_first)
-            elif moiety_1 and moiety_2:
-                self.fill_in_data_on_db_tree(
-                    tree_no=1, data=moiety_1, is_first=is_first)
-                self.fill_in_data_on_db_tree(
-                    tree_no=2, data=moiety_2, is_first=is_first)
-                self.fill_in_nan_on_db_trees(db_3=True, is_first=is_first)
-                self.fill_in_matched_fragment_ions_tree(moiety_1=moiety_1[0], 
-                    moiety_2=moiety_2[0], is_first=is_first)
-            elif moiety_3:
-                self.fill_in_data_on_db_tree(
-                    tree_no=3, data=moiety_3, is_first=is_first)
-                self.fill_in_nan_on_db_trees(
-                    db_1=True, db_2=True, is_first=is_first)
-                self.fill_in_matched_fragment_ions_tree(
-                    moiety_3=moiety_3[0], is_first=is_first)
-            elif moiety_2:
-                self.fill_in_data_on_db_tree(
-                    tree_no=2, data=moiety_2, is_first=is_first)
-                self.fill_in_nan_on_db_trees(
-                    db_1=True, db_3=True, is_first=is_first)
-                self.fill_in_matched_fragment_ions_tree(
-                    moiety_2=moiety_2[0], is_first=is_first)
-            elif moiety_1:
-                self.fill_in_data_on_db_tree(
-                    tree_no=1, data=moiety_1, is_first=is_first)
-                self.fill_in_nan_on_db_trees(
-                    db_2=True, db_3=True, is_first=is_first)
-                self.fill_in_matched_fragment_ions_tree(
-                    moiety_1=moiety_1[0], is_first=is_first)
-            else:
-                self.fill_in_nan_on_db_trees(
-                    db_1=True, db_2=True, db_3=True, is_first=is_first)
-                self.fill_in_matched_fragment_ions_tree(is_first=is_first)
-        self.db_1 = moiety_1[0]['N-discription'] if moiety_1 else ''
-        self.db_2 = moiety_2[0]['N-discription'] if moiety_2 else ''
-        self.db_3 = moiety_3[0]['N-discription'] if moiety_3 else ''
+                if masstable:
+                    self.fill_in_matched_fragment_ions_tree(
+                        moiety_1=moiety_1[0], moiety_2=moiety_2[0], 
+                        moiety_3=moiety_3[0], is_first=is_first)
 
     def get_focused_item(self, is_first=False):
         if is_first:
@@ -1159,79 +1152,120 @@ class MSRIDD_GUI(tk.Frame):
             # idx = int(str_idx)
         return selected_values
 
-    def fill_in_nan_on_db_trees(self, db_1=False, db_2=False, db_3=False, 
-        is_first=False):
+    def fill_in_nan_on_db_trees(
+        self, db_1=False, db_2=False, db_3=False, is_first=False):
         # tree.column = ['Rank', 'moiety', 'Score', 'Presence', 'Rel. Int']
+        li=['N/A', 'N/A', 'N/A', 'N/A', 'N/A']
         if db_1:
             self.db_1_tree.delete(*self.db_1_tree.get_children())
-            self.db_1_tree.insert("", "end", values=['', '', '', '', ''])
+            # if db_1: li=['###', 'Unresolved', '###', '###', '###']
+            self.db_1_tree.insert("", "end", values=li)
             if is_first:
                 self.db_1_pwin.add(self.db_1_tree)
         if db_2:
             self.db_2_tree.delete(*self.db_2_tree.get_children())
-            self.db_2_tree.insert("", "end", values=['', '', '', '', ''])
+            # if db_2: li=['###', 'Unresolved', '###', '###', '###']
+            self.db_2_tree.insert("", "end", values=li)
             if is_first:
                 self.db_2_pwin.add(self.db_2_tree)
         if db_3:
             self.db_3_tree.delete(*self.db_3_tree.get_children())
-            self.db_3_tree.insert("", "end", values=['', '', '', '', ''])
+            # if db_3: li=['###', 'Unresolved', '###', '###', '###']
+            self.db_3_tree.insert("", "end", values=li)
             if is_first:
                 self.db_3_pwin.add(self.db_3_tree)
 
     def fill_in_data_on_db_tree(self, tree_no, data, is_first=False):
-        # d = {Positions:~, N-discription:~, Score:~, Ratio sum:~, 
+        # d = {Positions:~, N-description:~, Score:~, Ratio sum:~, 
         #      Presence:~, Notice:~, Peaks dict:{}}
         # tree.column = ['Rank', 'moiety-1', 'Score', 'Presence', 'Rel. Int']
+        def check_no_unresolved_in_data(data_d):
+            bools = []
+            for rank, d in data_d.items():
+                if rank == 'Determined db':
+                    continue
+                if d:
+                    if 'Unresolved' not in d['Notice']:
+                        bools.append(True)
+                    else:
+                        bools.append(False)
+                else:
+                    bools.append(True)
+            return all(bools)
+        li=['###', 'Unresolved', '###', '###', '###']
+        last = len(data)
         if tree_no == 1:
             self.db_1_tree.delete(*self.db_1_tree.get_children())
             bg = "#fdedec" #red
-            for i, d in data.items():
-                if i == 'Determined db':
+            for key, d in data.items():
+                if key == 'Determined db':
                     continue
-                tag = 'colored' if i%2 == 1 else 'white'
+                tag = 'colored' if key%2 == 1 else 'white'
+                # if 'Unresolved' not in d['Notice']:
                 self.db_1_tree.insert("", "end", tags=tag, 
-                    values=[i+1, d['N-discription'], d['Score'], d['Presence'], 
-                    d['Ratio sum']])
-            self.db_1_tree.tag_configure('colored', background=bg)
+                    values=[key+1, d['N-description'], d['Score'], 
+                    d['Presence'], d['Ratio sum']])
+                # else:
+                #     self.db_1_tree.insert("", "end", tags=tag, values=li)
+            # if check_no_unresolved_in_data(data):
+            #     tag = 'colored' if last%2 == 1 else 'white'
+            #     self.db_1_tree.insert("", "end", tags=tag, values=li)
             if is_first:
                 self.db_1_pwin.add(self.db_1_tree)
+            self.db_1_tree.tag_configure('colored', background=bg)
         if tree_no == 2:
             self.db_2_tree.delete(*self.db_2_tree.get_children())
             bg = "#ebf5fb" #blue
-            for i, d in data.items():
-                if i == 'Determined db':
+            for key, d in data.items():
+                if key == 'Determined db':
                     continue
-                tag = 'colored' if i%2 == 1 else 'white'
+                tag = 'colored' if key%2 == 1 else 'white'
+                # if 'Unresolved' not in d['Notice']:
                 self.db_2_tree.insert("", "end", tags=tag, 
-                    values=[i+1, d['N-discription'], d['Score'], d['Presence'], 
-                    d['Ratio sum']])
-            self.db_2_tree.tag_configure('colored', background=bg)
+                    values=[key+1, d['N-description'], d['Score'], 
+                    d['Presence'], d['Ratio sum']])
+                # else:
+                #     self.db_2_tree.insert("", "end", tags=tag, values=li)
+            # if check_no_unresolved_in_data(data):
+            #     tag = 'colored' if last%2 == 1 else 'white'
+            #     self.db_2_tree.insert("", "end", tags=tag, values=li)
             if is_first:
                 self.db_2_pwin.add(self.db_2_tree)
+            self.db_2_tree.tag_configure('colored', background=bg)
         if tree_no == 3:
             self.db_3_tree.delete(*self.db_3_tree.get_children())
             bg = "#e9f7ef" #green
-            for i, d in data.items():
-                if i == 'Determined db':
+            for key, d in data.items():
+                if key == 'Determined db':
                     continue
-                tag = 'colored' if i%2 == 1 else 'white'
+                tag = 'colored' if key%2 == 1 else 'white'
+                # if 'Unresolved' not in d['Notice']:
                 self.db_3_tree.insert("", "end", tags=tag, 
-                    values=[i+1, d['N-discription'], d['Score'], d['Presence'], 
-                    d['Ratio sum']])
-            self.db_3_tree.tag_configure('colored', background=bg)
+                    values=[key+1, d['N-description'], d['Score'], 
+                    d['Presence'], d['Ratio sum']])
+            #     else:
+            #         self.db_3_tree.insert("", "end", tags=tag, values=li)
+            # if check_no_unresolved_in_data(data):
+            #     tag = 'colored' if last%2 == 1 else 'white'
+            #     self.db_3_tree.insert("", "end", tags=tag, values=li)
             if is_first:
                 self.db_3_pwin.add(self.db_3_tree)
+            self.db_3_tree.tag_configure('colored', background=bg)
 
     def fill_in_matched_fragment_ions_tree(self, moiety_1=False, moiety_2=False, 
         moiety_3=False, is_first=False):
-        # tree = ['m/z', 'Intensity', 'Ratio(%)', 'Delta', 'Ref m/z1', 'ppm1', 'NL type1', 
-        #         'Ref m/z2', 'ppm2', 'NL type2', 'Ref m/z3', 'ppm3', 'NL type3']
-        # 'Peaks dict': {'n-9/dis@n-8/+O/': [Ref m/z, Ref delta, Measured m/z, Measured ratio, ppm]}
+        # tree = ['m/z', 'Intensity', 'Ratio(%)', 'Delta', 
+        #         'Ref m/z1', 'ppm1', 'NL type1', 
+        #         'Ref m/z2', 'ppm2', 'NL type2', 
+        #         'Ref m/z3', 'ppm3', 'NL type3']
+        # 'Peaks dict': {'n-9/dis@n-8/+O/': [Ref m/z, Ref delta, Measured m/z, 
+        #                                    Measured ratio, ppm]}
         msms = self.temp_msms_df
-        self.matched_fragments_tree.delete(*self.matched_fragments_tree.get_children())
+        self.matched_fragments_tree.delete(
+            *self.matched_fragments_tree.get_children())
         def get_peak_dict(d):
             return d['Peaks dict'] if d else {'none': [0, 0, 0, 0, 0]}
-        def get_filling_values(mz, d, num):
+        def get_input_values(mz, d):
             ref_mz, ppm, oad_type, count = '', '', '', 0
             for key, li in d.items():
                 if mz == li[2]:
@@ -1243,15 +1277,16 @@ class MSRIDD_GUI(tk.Frame):
         peak_dict_1 = get_peak_dict(moiety_1)
         peak_dict_2 = get_peak_dict(moiety_2)
         peak_dict_3 = get_peak_dict(moiety_3)
-        for i, (row, df) in enumerate(msms.iterrows()):
-            mz = df['frag m/z']
-            intensity = int(df['intensity'])
-            ratio = df['Ratio(%)']
-            delta = df['Delta']
+        mzs = msms['frag m/z'].values.tolist()
+        intensities = msms['intensity'].values.tolist()
+        ratios = msms['Ratio(%)'].values.tolist()
+        deltas = msms['Delta'].values.tolist()
+        for i, (mz, intensity, ratio, delta) in enumerate(
+            zip(mzs, intensities, ratios, deltas)):
             tag = 'colored' if i%2 == 1 else 'white'
-            ref_mz_1, ppm_1, oad_type_1 = get_filling_values(mz, peak_dict_1, num=1)
-            ref_mz_2, ppm_2, oad_type_2 = get_filling_values(mz, peak_dict_2, num=2)
-            ref_mz_3, ppm_3, oad_type_3 = get_filling_values(mz, peak_dict_3, num=3)
+            ref_mz_1, ppm_1, oad_type_1 = get_input_values(mz, peak_dict_1)
+            ref_mz_2, ppm_2, oad_type_2 = get_input_values(mz, peak_dict_2)
+            ref_mz_3, ppm_3, oad_type_3 = get_input_values(mz, peak_dict_3)
             iid = self.matched_fragments_tree.insert("", "end", tags=tag, 
             values=[mz, intensity, ratio, delta, ref_mz_1, ppm_1, oad_type_1,
                     ref_mz_2, ppm_2, oad_type_2, ref_mz_3, ppm_3, oad_type_3])
@@ -1270,15 +1305,15 @@ class MSRIDD_GUI(tk.Frame):
         moiety_1, moiety_2, moiety_3 = {}, {}, {}
         if result_dict_len >= 4:
             for rank, d in result_dict['Moiety-1'].items():
-                if db_1_pos == d['N-discription']:
+                if db_1_pos == d['N-description']:
                     moiety_1 = d
         if result_dict_len >= 5:
             for rank, d in result_dict['Moiety-2'].items():
-                if db_2_pos == d['N-discription']:
+                if db_2_pos == d['N-description']:
                     moiety_2 = d
         if result_dict_len >= 6:
             for rank, d in result_dict['Moiety-3'].items():
-                if db_3_pos == d['N-discription']:
+                if db_3_pos == d['N-description']:
                     moiety_3 = d
         self.matched_fragments_tree.delete(*self.matched_fragments_tree.get_children())
         # 'Peaks dict': {'n-9/dis@n-8/+O/': [Ref m/z, Ref delta, Measured m/z, Measured ratio, ppm]}
@@ -1424,21 +1459,21 @@ class MSRIDD_GUI(tk.Frame):
                 for rank, d in result_dict['Moiety-1'].items():
                     if rank == 'Determined db':
                         continue
-                    if db_1_pos == d['N-discription']:
+                    if db_1_pos == d['N-description']:
                         new_db_1 = d
                         moiety_1[0] = d
             if result_dict_len >= 5:
                 for rank, d in result_dict['Moiety-2'].items():
                     if rank == 'Determined db':
                         continue
-                    if db_2_pos == d['N-discription']:
+                    if db_2_pos == d['N-description']:
                         new_db_2 = d
                         moiety_2[0] = d
             if result_dict_len >= 6:
                 for rank, d in result_dict['Moiety-3'].items():
                     if rank == 'Determined db':
                         continue
-                    if db_3_pos == d['N-discription']:
+                    if db_3_pos == d['N-description']:
                         new_db_3 = d
                         moiety_3[0] = d
             self.fill_in_matched_fragment_ions_tree(
@@ -1448,20 +1483,37 @@ class MSRIDD_GUI(tk.Frame):
 
     def get_current_db_pos_and_rank(self):
         # tree.column = ['Rank', 'moiety-1', 'Score', 'Presence', 'Rel. Int']
-        tree1_item = self.db_1_tree.item(self.db_1_tree.selection()[0],'values')
-        tree2_item = self.db_2_tree.item(self.db_2_tree.selection()[0],'values')
-        tree3_item = self.db_3_tree.item(self.db_3_tree.selection()[0],'values')
-        db_1_pos = tree1_item[1]
-        db_2_pos = tree2_item[1]
-        db_3_pos = tree3_item[1]
-        res = self.oad_result_dict[self.selected_idx]
         def find_rank(pos, moiety):
             for rank, d in moiety.items():
-                if rank != 'Determined db' and d['N-discription'] == pos:
+                if rank != 'Determined db' and d['N-description'] == pos:
                     return rank
-        rank_1 = find_rank(db_1_pos, res['Moiety-1']) if db_1_pos != '' else -1
-        rank_2 = find_rank(db_2_pos, res['Moiety-2']) if db_2_pos != '' else -1
-        rank_3 = find_rank(db_3_pos, res['Moiety-3']) if db_3_pos != '' else -1
+            return -1
+        try:
+            tree1_item = self.db_1_tree.item(self.db_1_tree.selection()[0],'values')
+            db_1_pos = tree1_item[1]
+        except:
+            db_1_pos = ''
+        try:
+            tree2_item = self.db_2_tree.item(self.db_2_tree.selection()[0],'values')
+            db_2_pos = tree2_item[1]
+        except:
+            db_2_pos = ''
+        try:
+            tree3_item = self.db_3_tree.item(self.db_3_tree.selection()[0],'values')
+            db_3_pos = tree3_item[1]
+        except:
+            db_3_pos = ''
+        res = self.oad_result_dict[self.selected_idx]
+        rank_1, rank_2, rank_3 = -1, -1, -1
+        if len(res) == 4:
+            rank_1 = find_rank(db_1_pos, res['Moiety-1'])
+        elif len(res) == 5:
+            rank_1 = find_rank(db_1_pos, res['Moiety-1'])
+            rank_2 = find_rank(db_2_pos, res['Moiety-2'])
+        elif len(res) == 6:
+            rank_1 = find_rank(db_1_pos, res['Moiety-1'])
+            rank_2 = find_rank(db_2_pos, res['Moiety-2'])
+            rank_3 = find_rank(db_3_pos, res['Moiety-3'])
         return [[rank_1, db_1_pos], [rank_2, db_2_pos], [rank_3, db_3_pos]]
 
     def judge_db_change(self, new_db_1, new_db_2, new_db_3):
@@ -1469,14 +1521,41 @@ class MSRIDD_GUI(tk.Frame):
         result_dict = self.oad_result_dict[self.selected_idx]
         result_dict_len = len(result_dict)
         if result_dict_len >= 4 and result_dict['Moiety-1']:
-            old_db_1 = result_dict['Moiety-1']['Determined db']['N-discription']
+            try:
+                old_db_1 \
+                = result_dict['Moiety-1']['Determined db']['N-description']
+            except:
+                pass
         if result_dict_len >= 5 and result_dict['Moiety-2']:
-            old_db_2 = result_dict['Moiety-2']['Determined db']['N-discription']
+            try:
+                old_db_2 \
+                = result_dict['Moiety-2']['Determined db']['N-description']
+            except:
+                pass
         if result_dict_len >= 6 and result_dict['Moiety-3']:
-            old_db_3 = result_dict['Moiety-3']['Determined db']['N-discription']
-        db_1_changed = [False, old_db_1] if new_db_1 == old_db_1 else [True, old_db_1]
-        db_2_changed = [False, old_db_2] if new_db_2 == old_db_2 else [True, old_db_2]
-        db_3_changed = [False, old_db_3] if new_db_3 == old_db_3 else [True, old_db_3]
+            try:
+                old_db_3 \
+                = result_dict['Moiety-3']['Determined db']['N-description']
+            except:
+                pass
+        if new_db_1 == 'N/A':
+            db_1_changed = [False, old_db_1]
+        elif new_db_1 == old_db_1:
+            db_1_changed = [False, old_db_1]
+        else:
+            db_1_changed = [True, old_db_1]
+        if new_db_2 == 'N/A':
+            db_2_changed = [False, old_db_2]
+        elif new_db_2 == old_db_2:
+            db_2_changed = [False, old_db_2]
+        else:
+            db_2_changed = [True, old_db_2]
+        if new_db_3 == 'N/A':
+            db_3_changed = [False, old_db_3]
+        elif new_db_3 == old_db_3:
+            db_3_changed = [False, old_db_3]
+        else:
+            db_3_changed = [True, old_db_3]
         return [db_1_changed, db_2_changed, db_3_changed]
 
     def modify_db_pos(self):
@@ -1492,37 +1571,470 @@ class MSRIDD_GUI(tk.Frame):
         idx = self.selected_idx
         if any([db_1_changed, db_2_changed, db_3_changed]):
             if db_1_changed:
-                self.re_const_oad_res_dict(idx=idx, moiety_num=1, rank=rank_1)
+                self.re_const_oad_res_dict(idx=idx, moiety_num=1, rank=rank_1,
+                    old_db=old_db_1, new_db=new_db_1)
             if db_2_changed:
-                self.re_const_oad_res_dict(idx=idx, moiety_num=2, rank=rank_2)
+                self.re_const_oad_res_dict(idx=idx, moiety_num=2, rank=rank_2,
+                    old_db=old_db_2, new_db=new_db_2)
             if db_3_changed:
-                self.re_const_oad_res_dict(idx=idx, moiety_num=3, rank=rank_3)
+                self.re_const_oad_res_dict(idx=idx, moiety_num=3, rank=rank_3,
+                    old_db=old_db_3, new_db=new_db_3)
             df = self.target_table[self.target_table['ID'] == idx]
-            target_row = list(df.index)[0]
+            row = list(df.index)[0]
             old_name = df['OAD result name'].values[0]
-            new_name = old_name.replace(old_db_1, new_db_1, 1).replace(
-                old_db_2, new_db_2, 1).replace(old_db_3, new_db_3, 1)
-            self.target_table.loc[target_row:target_row, ['OAD result name']] \
-                = new_name
+            new_name = self.update_oad_result_name(idx=idx, 
+                old_name=old_name, db_list=db_list, bool_list=bool_list)
+            self.target_table.loc[row:row, ['OAD result name']] = new_name
             self.update_result_table(idx)
 
-    def re_const_oad_res_dict(self, idx, moiety_num, rank):
+    def update_oad_result_name(self, idx, old_name, db_list, bool_list):
+        new_db_1, new_db_2, new_db_3 \
+            = db_list[0][1], db_list[1][1], db_list[2][1]
+        old_db_1, old_db_2, old_db_3 \
+            = bool_list[0][1], bool_list[1][1], bool_list[2][1]
+        db_1_changed, db_2_changed, db_3_changed \
+            = bool_list[0][0], bool_list[1][0], bool_list[2][0]
+        moiety_info = self.temp_lipid_info['Each moiety info']
+        unsaturated_moiety_num = self.temp_lipid_info['Unsaturated moiety']
+        def set_resolved_bool(idx, new_db, acyl_num):
+            if new_db == 'Unresolved':
+                self.oad_result_dict[idx]['Each bools'][acyl_num] = False
+            else:
+                self.oad_result_dict[idx]['Each bools'][acyl_num] = True
+        if len(moiety_info) == 2:
+            if db_1_changed:
+                new_name = self.replace_one_pos_in_moiety(info=moiety_info, 
+                    old_name=old_name, old_db=old_db_1, new_db=new_db_1)
+                set_resolved_bool(idx=idx, new_db=new_db_1, acyl_num=0)
+        elif len(moiety_info) == 4:
+            if unsaturated_moiety_num == 1:
+                if db_1_changed:
+                    if moiety_info['db-1'] > 0:
+                        new_name = self.replace_one_pos_in_dimoieties(
+                                num=1, old_name=old_name, info=moiety_info, 
+                                old_db=old_db_1, new_db=new_db_1)
+                    else:
+                        new_name = self.replace_one_pos_in_dimoieties(
+                                num=2, old_name=old_name, info=moiety_info, 
+                                old_db=old_db_1, new_db=new_db_1)
+                    set_resolved_bool(idx=idx, new_db=new_db_1, acyl_num=0)
+            elif unsaturated_moiety_num == 2:
+                if db_1_changed and db_2_changed:
+                    new_name = self.replace_two_pos_in_dimoieties(
+                        info=moiety_info, old_name=old_name, 
+                        old_db_1=old_db_1, new_db_1=new_db_1, 
+                        old_db_2=old_db_2, new_db_2=new_db_2)
+                    set_resolved_bool(idx=idx, new_db=new_db_1, acyl_num=0)
+                    set_resolved_bool(idx=idx, new_db=new_db_2, acyl_num=1)
+                elif db_1_changed:
+                    new_name = self.replace_one_pos_in_dimoieties(
+                                num=1, old_name=old_name, info=moiety_info, 
+                                old_db=old_db_1, new_db=new_db_1)
+                    set_resolved_bool(idx=idx, new_db=new_db_1, acyl_num=0)
+                elif db_2_changed:
+                    new_name = self.replace_one_pos_in_dimoieties(
+                                num=2, old_name=old_name, info=moiety_info, 
+                                old_db=old_db_2, new_db=new_db_2)
+                    set_resolved_bool(idx=idx, new_db=new_db_2, acyl_num=1)
+        elif len(moiety_info) == 6:
+            if unsaturated_moiety_num == 1:
+                if db_1_changed:
+                    if moiety_info['db-1'] > 0:
+                        new_name = self.replace_one_pos_in_trimoieties(
+                                    num=1, old_name=old_name, info=moiety_info, 
+                                    old_db=old_db_1, new_db=new_db_1)
+                    elif moiety_info['db-2'] > 0:
+                        new_name = self.replace_one_pos_in_trimoieties(
+                                    num=2, old_name=old_name, info=moiety_info, 
+                                    old_db=old_db_1, new_db=new_db_1)
+                    else:
+                        new_name = self.replace_one_pos_in_trimoieties(
+                                    num=3, old_name=old_name, info=moiety_info, 
+                                    old_db=old_db_1, new_db=new_db_1)
+                    set_resolved_bool(idx=idx, new_db=new_db_1, acyl_num=0)
+            if unsaturated_moiety_num == 2:
+                if db_1_changed and db_2_changed:
+                    if moiety_info['db-1'] > 0 and moiety_info['db-2'] > 0:
+                        new_name = self.replace_two_pos_in_trimoieties(
+                                    num1=1, num2=2, old_name=old_name, 
+                                    info=moiety_info, 
+                                    old_db_1=old_db_1, new_db_1=new_db_1,
+                                    old_db_2=old_db_2, new_db_2=new_db_2)
+                    elif moiety_info['db-1'] > 0 and moiety_info['db-3'] > 0:
+                        new_name = self.replace_two_pos_in_trimoieties(
+                                    num1=1, num2=3, old_name=old_name, 
+                                    info=moiety_info, 
+                                    old_db_1=old_db_1, new_db_1=new_db_1,
+                                    old_db_2=old_db_2, new_db_2=new_db_2)
+                    else: #moiety_info['db-2'] > 0 and moiety_info['db-3'] > 0:
+                        new_name = self.replace_two_pos_in_trimoieties(
+                                    num1=2, num2=3, old_name=old_name, 
+                                    info=moiety_info, 
+                                    old_db_1=old_db_1, new_db_1=new_db_1,
+                                    old_db_2=old_db_2, new_db_2=new_db_2)
+                    set_resolved_bool(idx=idx, new_db=new_db_1, acyl_num=0)
+                    set_resolved_bool(idx=idx, new_db=new_db_2, acyl_num=1)
+                elif db_1_changed:
+                    if moiety_info['db-1'] > 0 and moiety_info['db-2'] > 0:
+                        new_name = self.replace_one_pos_in_trimoieties(
+                                    num=1, old_name=old_name, info=moiety_info, 
+                                    old_db=old_db_1, new_db=new_db_1)
+                    elif moiety_info['db-1'] > 0 and moiety_info['db-3'] > 0:
+                        new_name = self.replace_one_pos_in_trimoieties(
+                                    num=1, old_name=old_name, info=moiety_info, 
+                                    old_db=old_db_1, new_db=new_db_1)
+                    else: #moiety_info['db-2'] > 0 and moiety_info['db-3'] > 0:
+                        new_name = self.replace_one_pos_in_trimoieties(
+                                    num=2, old_name=old_name, info=moiety_info, 
+                                    old_db=old_db_1, new_db=new_db_1)
+                    set_resolved_bool(idx=idx, new_db=new_db_1, acyl_num=0)
+                else: #db_2_changed
+                    if moiety_info['db-1'] > 0 and moiety_info['db-2'] > 0:
+                        new_name = self.replace_one_pos_in_trimoieties(
+                                    num=2, old_name=old_name, info=moiety_info, 
+                                    old_db=old_db_2, new_db=new_db_2)
+                    elif moiety_info['db-1'] > 0 and moiety_info['db-3'] > 0:
+                        new_name = self.replace_one_pos_in_trimoieties(
+                                    num=3, old_name=old_name, info=moiety_info, 
+                                    old_db=old_db_2, new_db=new_db_2)
+                    else: #moiety_info['db-2'] > 0 and moiety_info['db-3'] > 0:
+                        new_name = self.replace_one_pos_in_trimoieties(
+                                    num=3, old_name=old_name, info=moiety_info, 
+                                    old_db=old_db_2, new_db=new_db_2)
+                    set_resolved_bool(idx=idx, new_db=new_db_2, acyl_num=1)
+            if unsaturated_moiety_num == 3:
+                if db_1_changed and db_2_changed and db_3_changed:
+                    new_name = self.replace_three_pos_in_trimoieties(
+                        info=moiety_info, old_name=old_name, 
+                        old_db_1=old_db_1, new_db_1=new_db_1, 
+                        old_db_2=old_db_2, new_db_2=new_db_2,
+                        old_db_3=old_db_3, new_db_3=new_db_3)
+                    set_resolved_bool(idx=idx, new_db=new_db_1, acyl_num=0)
+                    set_resolved_bool(idx=idx, new_db=new_db_2, acyl_num=1)
+                    set_resolved_bool(idx=idx, new_db=new_db_3, acyl_num=2)
+                elif db_1_changed and db_2_changed:
+                    new_name = self.replace_two_pos_in_trimoieties(
+                                    num1=1, num2=2, old_name=old_name, 
+                                    info=moiety_info, 
+                                    old_db_1=old_db_1, new_db_1=new_db_1,
+                                    old_db_2=old_db_2, new_db_2=new_db_2)
+                    set_resolved_bool(idx=idx, new_db=new_db_1, acyl_num=0)
+                    set_resolved_bool(idx=idx, new_db=new_db_2, acyl_num=1)
+                elif db_1_changed and db_3_changed:
+                    new_name = self.replace_two_pos_in_trimoieties(
+                                    num1=1, num2=3, old_name=old_name, 
+                                    info=moiety_info, 
+                                    old_db_1=old_db_1, new_db_1=new_db_1,
+                                    old_db_2=old_db_3, new_db_2=new_db_3)
+                    set_resolved_bool(idx=idx, new_db=new_db_1, acyl_num=0)
+                    set_resolved_bool(idx=idx, new_db=new_db_3, acyl_num=2)
+                elif db_2_changed and db_3_changed:
+                    new_name = self.replace_two_pos_in_trimoieties(
+                                    num1=2, num2=3, old_name=old_name, 
+                                    info=moiety_info, 
+                                    old_db_1=old_db_2, new_db_1=new_db_2,
+                                    old_db_2=old_db_3, new_db_2=new_db_3)
+                    set_resolved_bool(idx=idx, new_db=new_db_2, acyl_num=1)
+                    set_resolved_bool(idx=idx, new_db=new_db_3, acyl_num=2)
+                elif db_1_changed:
+                    new_name = self.replace_one_pos_in_trimoieties(
+                                    num=1, old_name=old_name, info=moiety_info, 
+                                    old_db=old_db_1, new_db=new_db_1)
+                    set_resolved_bool(idx=idx, new_db=new_db_1, acyl_num=0)
+                elif db_2_changed:
+                    new_name = self.replace_one_pos_in_trimoieties(
+                                    num=2, old_name=old_name, info=moiety_info, 
+                                    old_db=old_db_2, new_db=new_db_2)
+                    set_resolved_bool(idx=idx, new_db=new_db_2, acyl_num=1)
+                else: #db_3_changed
+                    new_name = self.replace_one_pos_in_trimoieties(
+                                    num=3, old_name=old_name, info=moiety_info, 
+                                    old_db=old_db_3, new_db=new_db_3)
+                    set_resolved_bool(idx=idx, new_db=new_db_3, acyl_num=2)
+        else:
+            new_name = old_name
+        return new_name
+
+    def replace_one_pos_in_moiety(self, old_name, info, old_db, new_db):
+        chain, db = 'chain-1', 'db-1'
+        moiety = f'{info[chain]}:{info[db]}'
+        sign = 'one'
+        signed_moiety = f'{info[chain]}:{sign}{info[db]}'
+        if old_db == 'Unresolved':
+            old = f'{signed_moiety}'
+        else:
+            old = f'{signed_moiety}({old_db})'
+        if new_db == 'Unresolved':
+            new = f'{signed_moiety}'
+        else:
+            new = f'{signed_moiety}({new_db})'
+        old_name = old_name.replace(moiety, signed_moiety, 1)
+        new_name = old_name.replace(old, new, 1)
+        new_name = new_name.replace('one', '', 1)
+        return new_name
+
+    def replace_one_pos_in_dimoieties(self, num, old_name, info, old_db, new_db):
+        chain_1, db_1 = 'chain-1', 'db-1'
+        chain_2, db_2 = 'chain-2', 'db-2'
+        moiety_1 = f'{info[chain_1]}:{info[db_1]}'
+        moiety_2 = f'{info[chain_2]}:{info[db_2]}'
+        signed_moiety_1 = f'{info[chain_1]}:one{info[db_1]}'
+        signed_moiety_2 = f'{info[chain_2]}:two{info[db_2]}'
+        if num == 1:
+            if old_db == 'Unresolved':
+                old = f'{signed_moiety_1}'
+            else:
+                old = f'{signed_moiety_1}({old_db})'
+            if new_db == 'Unresolved':
+                new = f'{signed_moiety_1}'
+            else:
+                new = f'{signed_moiety_1}({new_db})'
+        else:
+            if old_db == 'Unresolved':
+                old = f'{signed_moiety_2}'
+            else:
+                old = f'{signed_moiety_2}({old_db})'
+            if new_db == 'Unresolved':
+                new = f'{signed_moiety_2}'
+            else:
+                new = f'{signed_moiety_2}({new_db})'
+        old_name = old_name.replace(moiety_1, signed_moiety_1, 1)
+        old_name = old_name.replace(moiety_2, signed_moiety_2, 1)
+        new_name = old_name.replace(old, new, 1)
+        new_name = new_name.replace('one', '', 1).replace('two', '', 1)
+        return new_name
+
+    def replace_one_pos_in_trimoieties(
+        self, num, old_name, info, old_db, new_db):
+        chain_1, db_1 = 'chain-1', 'db-1'
+        chain_2, db_2 = 'chain-2', 'db-2'
+        chain_3, db_3 = 'chain-3', 'db-3'
+        moiety_1 = f'{info[chain_1]}:{info[db_1]}'
+        moiety_2 = f'{info[chain_2]}:{info[db_2]}'
+        moiety_3 = f'{info[chain_3]}:{info[db_3]}'
+        signed_moiety_1 = f'{info[chain_1]}:one{info[db_1]}'
+        signed_moiety_2 = f'{info[chain_2]}:two{info[db_2]}'
+        signed_moiety_3 = f'{info[chain_3]}:three{info[db_3]}'
+        if num == 1:
+            if old_db == 'Unresolved':
+                old = f'{signed_moiety_1}'
+            else:
+                old = f'{signed_moiety_1}({old_db})'
+            if new_db == 'Unresolved':
+                new = f'{signed_moiety_1}'
+            else:
+                new = f'{signed_moiety_1}({new_db})'
+        elif num == 2:
+            if old_db == 'Unresolved':
+                old = f'{signed_moiety_2}'
+            else:
+                old = f'{signed_moiety_2}({old_db})'
+            if new_db == 'Unresolved':
+                new = f'{signed_moiety_2}'
+            else:
+                new = f'{signed_moiety_2}({new_db})'
+        else:
+            if old_db == 'Unresolved':
+                old = f'{signed_moiety_3}'
+            else:
+                old = f'{signed_moiety_3}({old_db})'
+            if new_db == 'Unresolved':
+                new = f'{signed_moiety_3}'
+            else:
+                new = f'{signed_moiety_3}({new_db})'
+        old_name = old_name.replace(moiety_1, signed_moiety_1, 1)
+        old_name = old_name.replace(moiety_2, signed_moiety_2, 1)
+        old_name = old_name.replace(moiety_3, signed_moiety_3, 1)
+        new_name = old_name.replace(old, new, 1)
+        new_name = new_name.replace('one','',1).replace('two','',1).replace('three','',1)
+        return new_name
+
+    def replace_two_pos_in_dimoieties(
+        self, old_name, info, old_db_1, new_db_1, old_db_2, new_db_2):
+        chain_1, db_1 = 'chain-1', 'db-1'
+        chain_2, db_2 = 'chain-2', 'db-2'
+        moiety_1 = f'{info[chain_1]}:{info[db_1]}'
+        moiety_2 = f'{info[chain_2]}:{info[db_2]}'
+        signed_moiety_1 = f'{info[chain_1]}:one{info[db_1]}'
+        signed_moiety_2 = f'{info[chain_2]}:two{info[db_2]}'
+        if old_db_1 == 'Unresolved':
+            old_1 = f'{signed_moiety_1}'
+        else:
+            old_1 = f'{signed_moiety_1}({old_db_1})'
+        if old_db_2 == 'Unresolved':
+            old_2 = f'{signed_moiety_2}'
+        else:
+            old_2 = f'{signed_moiety_2}({old_db_2})'
+        if new_db_1 == 'Unresolved':
+            new_1 = f'{signed_moiety_1}'
+        else:
+            new_1 = f'{signed_moiety_1}({new_db_1})'
+        if new_db_2 == 'Unresolved':
+            new_2 = f'{signed_moiety_2}'
+        else:
+            new_2 = f'{signed_moiety_2}({new_db_2})'
+        old_name = old_name.replace(moiety_1, signed_moiety_1, 1)
+        old_name = old_name.replace(moiety_2, signed_moiety_2, 1)
+        new_name = old_name.replace(old_1, new_1, 1)
+        new_name = new_name.replace(old_2, new_2, 1)
+        new_name = new_name.replace('one', '', 1).replace('two', '', 1)
+        return new_name
+
+    def replace_two_pos_in_trimoieties(self, num1, num2, old_name, 
+        info, old_db_1, new_db_1, old_db_2, new_db_2):
+        chain_1, db_1 = 'chain-1', 'db-1'
+        chain_2, db_2 = 'chain-2', 'db-2'
+        chain_3, db_3 = 'chain-3', 'db-3'
+        moiety_1 = f'{info[chain_1]}:{info[db_1]}'
+        moiety_2 = f'{info[chain_2]}:{info[db_2]}'
+        moiety_3 = f'{info[chain_3]}:{info[db_3]}'
+        signed_moiety_1 = f'{info[chain_1]}:one{info[db_1]}'
+        signed_moiety_2 = f'{info[chain_2]}:two{info[db_2]}'
+        signed_moiety_3 = f'{info[chain_3]}:three{info[db_3]}'
+        if num1 == 1 and num2 == 2:
+            if old_db_1 == 'Unresolved':
+                old_1 = f'{signed_moiety_1}'
+            else:
+                old_1 = f'{signed_moiety_1}({old_db_1})'
+            if new_db_1 == 'Unresolved':
+                new_1 = f'{signed_moiety_1}'
+            else:
+                new_1 = f'{signed_moiety_1}({new_db_1})'
+            if old_db_2 == 'Unresolved':
+                old_2 = f'{signed_moiety_2}'
+            else:
+                old_2 = f'{signed_moiety_2}({old_db_2})'
+            if new_db_2 == 'Unresolved':
+                new_2 = f'{signed_moiety_2}'
+            else:
+                new_2 = f'{signed_moiety_2}({new_db_2})'
+        elif num1 == 1 and num2 == 3:
+            if old_db_1 == 'Unresolved':
+                old_1 = f'{signed_moiety_1}'
+            else:
+                old_1 = f'{signed_moiety_1}({old_db_1})'
+            if new_db_1 == 'Unresolved':
+                new_1 = f'{signed_moiety_1}'
+            else:
+                new_1 = f'{signed_moiety_1}({new_db_1})'
+            if old_db_2 == 'Unresolved':
+                old_2 = f'{signed_moiety_3}'
+            else:
+                old_2 = f'{signed_moiety_3}({old_db_2})'
+            if new_db_2 == 'Unresolved':
+                new_2 = f'{signed_moiety_3}'
+            else:
+                new_2 = f'{signed_moiety_3}({new_db_2})'
+        else: #num1 == 2 and num2 == 3:
+            if old_db_1 == 'Unresolved':
+                old_1 = f'{signed_moiety_2}'
+            else:
+                old_1 = f'{signed_moiety_2}({old_db_1})'
+            if new_db_1 == 'Unresolved':
+                new_1 = f'{signed_moiety_2}'
+            else:
+                new_1 = f'{signed_moiety_2}({new_db_1})'
+            if old_db_2 == 'Unresolved':
+                old_2 = f'{signed_moiety_3}'
+            else:
+                old_2 = f'{signed_moiety_3}({old_db_2})'
+            if new_db_2 == 'Unresolved':
+                new_2 = f'{signed_moiety_3}'
+            else:
+                new_2 = f'{signed_moiety_3}({new_db_2})'
+        old_name = old_name.replace(moiety_1, signed_moiety_1, 1)
+        old_name = old_name.replace(moiety_2, signed_moiety_2, 1)
+        old_name = old_name.replace(moiety_3, signed_moiety_3, 1)
+        new_name = old_name.replace(old_1, new_1, 1)
+        new_name = new_name.replace(old_2, new_2, 1)
+        new_name = new_name.replace('one','',1).replace('two','',1).replace('three','',1)
+        return new_name
+
+    def replace_three_pos_in_trimoieties(self, old_name, info, 
+        old_db_1, new_db_1, old_db_2, new_db_2, old_db_3, new_db_3):
+        chain_1, db_1 = 'chain-1', 'db-1'
+        chain_2, db_2 = 'chain-2', 'db-2'
+        chain_3, db_3 = 'chain-3', 'db-3'
+        moiety_1 = f'{info[chain_1]}:{info[db_1]}'
+        moiety_2 = f'{info[chain_2]}:{info[db_2]}'
+        moiety_3 = f'{info[chain_3]}:{info[db_3]}'
+        signed_moiety_1 = f'{info[chain_1]}:one{info[db_1]}'
+        signed_moiety_2 = f'{info[chain_2]}:two{info[db_2]}'
+        signed_moiety_3 = f'{info[chain_3]}:three{info[db_3]}'
+        if old_db_1 == 'Unresolved':
+            old_1 = f'{signed_moiety_1}'
+        else:
+            old_1 = f'{signed_moiety_1}({old_db_1})'
+        if old_db_2 == 'Unresolved':
+            old_2 = f'{signed_moiety_2}'
+        else:
+            old_2 = f'{signed_moiety_2}({old_db_2})'
+        if old_db_3 == 'Unresolved':
+            old_3 = f'{signed_moiety_3}'
+        else:
+            old_3 = f'{signed_moiety_3}({old_db_3})'
+        if new_db_1 == 'Unresolved':
+            new_1 = f'{signed_moiety_1}'
+        else:
+            new_1 = f'{signed_moiety_1}({new_db_1})'
+        if new_db_2 == 'Unresolved':
+            new_2 = f'{signed_moiety_2}'
+        else:
+            new_2 = f'{signed_moiety_2}({new_db_2})'
+        if new_db_3 == 'Unresolved':
+            new_3 = f'{signed_moiety_3}'
+        else:
+            new_3 = f'{signed_moiety_3}({new_db_3})'
+        old_name = old_name.replace(moiety_1, signed_moiety_1, 1)
+        old_name = old_name.replace(moiety_2, signed_moiety_2, 1)
+        old_name = old_name.replace(moiety_3, signed_moiety_3, 1)
+        new_name = old_name.replace(old_1, new_1, 1)
+        new_name = new_name.replace(old_2, new_2, 1)
+        new_name = new_name.replace(old_3, new_3, 1)
+        new_name \
+        = new_name.replace('one','',1).replace('two','',1).replace('three','',1)
+        return new_name
+
+    def re_const_oad_res_dict(self, idx, moiety_num, rank, old_db, new_db):
+        unresolved_d = {'Positions': '', 'N-description': 'Unresolved',
+                        'Score': '###', 'Ratio sum': '###', 'Presence': '###',
+                        'Notice': 'Unresolved', 
+                        'Measured peaks': [[0, 0, 0]], 
+                        'Ref peaks': [['', 0, 0, 0]], 
+                        'Peaks dict': {'none': [0, 0, 0, 0, 0]}
+                        }
         moiety = f'Moiety-{moiety_num}'
-        new_no1 = copy.copy(self.oad_result_dict[idx][moiety][rank])
-        notice = new_no1['Notice']
-        if 'Modified' not in notice:
+        old_no1 = self.oad_result_dict[idx][moiety][0].copy()
+        new_no1 = self.oad_result_dict[idx][moiety][rank].copy()
+        moiety_d = self.oad_result_dict[idx][moiety].copy()
+        def get_unresolved_rank(d):
+            for key, v in d.items():
+                if v['N-description'] == 'Unresolved':
+                    return key
+        if 'Modified' not in new_no1['Notice']:
             new_no1['Notice'] += ', Modified'
         new_d = {0: new_no1}
-        for key, v in self.oad_result_dict[idx][moiety].items():
-            if type(key) == int:
-                if key < rank:
-                    new_d[key+1] = v
-                    if (key == 0) and ('Modified' not in v['Notice']):
-                        new_d[key+1]['Notice'] += ', Modified'
-                elif key == rank:
-                    pass
-                else:
-                    new_d[key] = v
+        if new_db == 'Unresolved':
+            for del_key in [0, rank, 'Determined db']:
+                    removed = moiety_d.pop(del_key)
+            new_d[1] = old_no1
+            for i, (rank, v) in enumerate(moiety_d.items(), start=2):
+                new_d[i] = v
+        else:
+            if old_db == 'Unresolved':
+                for del_key in [0, rank, 'Determined db']:
+                    removed = moiety_d.pop(del_key)
+                for i, (rank, v) in enumerate(moiety_d.items(), start=1):
+                    new_d[i] = v
+            else:
+                unresolved_rank = get_unresolved_rank(moiety_d)
+                for del_key in [0, rank, unresolved_rank, 'Determined db']:
+                    removed = moiety_d.pop(del_key)
+                new_d[1] = old_no1
+                for i, (rank, v) in enumerate(moiety_d.items(), start=2):
+                    new_d[i] = v
+            unresolved_d['Notice'] += ', Modified'
+            new_d[len(new_d)] = unresolved_d
         new_d['Determined db'] = new_no1
         self.oad_result_dict[idx][moiety] = new_d
 
@@ -1624,9 +2136,13 @@ class MSRIDD_GUI(tk.Frame):
         axes_width = [0, 1, 1, 0]
         tick_width = 1
         tick_pad = 1
-        total_fig_x = msms_df['frag m/z'].values.tolist()
-        total_fig_y = msms_df['Ratio(%)'].values.tolist()
-        min_mz = min(total_fig_x)
+        total_ions = msms_df['frag m/z'].values.tolist()
+        min_mz = min(total_ions)
+        ex_msms = msms_df[msms_df['Ratio(%)'] >= 1]
+        total_fig_x = ex_msms['frag m/z'].values.tolist()
+        total_fig_y = ex_msms['Ratio(%)'].values.tolist()
+        # total_fig_x = msms_df['frag m/z'].values.tolist()
+        # total_fig_y = msms_df['Ratio(%)'].values.tolist()
         if lipid_info['MS2 Mz'] > 0:
             precursor_mz = lipid_info['MS2 Mz']
         else:
@@ -1729,12 +2245,12 @@ class MSRIDD_GUI(tk.Frame):
         tick_pad = 1
         #endregion
         #region Data structure
-        # dict = {0:              {'Positions': '', 'N-discription': '', 'Score': float, 
+        # dict = {0:              {'Positions': '', 'N-description': '', 'Score': float, 
         #                          'Ratio sum': float, 'Presence': float, 'Notice': '',
         #                          'Peaks dict': {'n-9/dis@n-8/+O/': [Ref m/z, Ref delta, Measured m/z, Measured ratio, ppm]}
         #                         },
         #         1:              {....},
-        #         Determined db:  {'Positions': '', 'N-discription': '', 'Score': float,
+        #         Determined db:  {'Positions': '', 'N-description': '', 'Score': float,
         #                          'Ratio sum': float, 'Presence': float, 'Notice': '',
         #                          'Measured peaks': [[Measured m/z, Measured ratio, ppm], [...]],
         #                          'Ref peaks': [[OAD type, Ref m/z, Ref NL, Ref ratio], [...]]
@@ -1744,54 +2260,41 @@ class MSRIDD_GUI(tk.Frame):
         #endregion
         #region Detail setting
         positions_list = []
-        peaks_dict_1, peaks_dict_2, peaks_dict_3 = {}, {}, {}
-        ref_mz_1, ref_ratio_1, ref_mz_2, ref_ratio_2, ref_mz_3, ref_ratio_3 = [], [], [], [], [], []
-        measured_oad_ions_1, measured_oad_ions_2, measured_oad_ions_3 = [], [], []
-        oad04_ions_1, oad04_ions_2, oad04_ions_3 = [], [], []
-        oad10_ions_1, oad10_ions_2, oad10_ions_3 = [], [], []
+        # peaks_dict_1, peaks_dict_2, peaks_dict_3 = {}, {}, {}
+        ref_mz_1, ref_ratio_1, ref_mz_2, ref_ratio_2, ref_mz_3, ref_ratio_3 \
+        = [], [], [], [], [], []
+        # measured_oad_ions_1, measured_oad_ions_2, measured_oad_ions_3 = [], [], []
+        # oad04_ions_1, oad04_ions_2, oad04_ions_3 = [], [], []
+        # oad10_ions_1, oad10_ions_2, oad10_ions_3 = [], [], []
         is_this_plasmalogen = 'Plasm' in lipid_info['Ontology']
         # ref_precursor_mz = lipid_info['Ref precursor Mz']
         if dict_3:
             positions_list.append(dict_3[0]['Positions'])
-            peaks_dict_3 = dict_3[0]['Peaks dict']
+            # peaks_dict_3 = dict_3[0]['Peaks dict']
         elif dict_2:
             positions_list.append(dict_2[0]['Positions'])
-            peaks_dict_2 = dict_2[0]['Peaks dict']
+            # peaks_dict_2 = dict_2[0]['Peaks dict']
         elif dict_1:
             positions_list.append(dict_1[0]['Positions'])
-            peaks_dict_1 = dict_1[0]['Peaks dict']
+            # peaks_dict_1 = dict_1[0]['Peaks dict']
         if dict_3:
             ref_mz_3 = [li[1] for li in dict_3[0]['Ref peaks']]
             ref_ratio_3 = [li[3]*(-1) for li in dict_3[0]['Ref peaks']]
-            measured_oad_ions_3 = [li[1] for li in dict_3[0]['Measured peaks']]
-            oad04_ions_3 = [[li[1], li[3]] for li in dict_3[0]['Ref peaks'] if 'OAD04' in li[0]]
-            oad10_ions_3 = [[li[1], li[3]] for li in dict_3[0]['Ref peaks'] if 'OAD10' in li[0]]
+            # measured_oad_ions_3 = [li[1] for li in dict_3[0]['Measured peaks']]
+            # oad04_ions_3 = [[li[1], li[3]] for li in dict_3[0]['Ref peaks'] if 'OAD04' in li[0]]
+            # oad10_ions_3 = [[li[1], li[3]] for li in dict_3[0]['Ref peaks'] if 'OAD10' in li[0]]
         if dict_2:
             ref_mz_2 = [li[1] for li in dict_2[0]['Ref peaks']]
             ref_ratio_2 = [li[3]*(-1) for li in dict_2[0]['Ref peaks']]
-            measured_oad_ions_2 = [li[1] for li in dict_2[0]['Measured peaks']]
-            oad04_ions_2 = [[li[1], li[3]] for li in dict_2[0]['Ref peaks'] if 'OAD04' in li[0]]
-            oad10_ions_2 = [[li[1], li[3]] for li in dict_2[0]['Ref peaks'] if 'OAD10' in li[0]]
+            # measured_oad_ions_2 = [li[1] for li in dict_2[0]['Measured peaks']]
+            # oad04_ions_2 = [[li[1], li[3]] for li in dict_2[0]['Ref peaks'] if 'OAD04' in li[0]]
+            # oad10_ions_2 = [[li[1], li[3]] for li in dict_2[0]['Ref peaks'] if 'OAD10' in li[0]]
         if dict_1:
             ref_mz_1 = [li[1] for li in dict_1[0]['Ref peaks']]
             ref_ratio_1 = [li[3]*(-1) for li in dict_1[0]['Ref peaks']]
-            measured_oad_ions_1 = [li[1] for li in dict_1[0]['Measured peaks']]
-            oad04_ions_1 = [[li[1], li[3]] for li in dict_1[0]['Ref peaks'] if 'OAD04' in li[0]]
-            oad10_ions_1 = [[li[1], li[3]] for li in dict_1[0]['Ref peaks'] if 'OAD10' in li[0]]
-        # if lipid_info['MS2 Mz'] > 0:
-        #     precursor_mz = lipid_info['MS2 Mz']
-        # else:
-        #     precursor_mz = lipid_info['Precursor Mz']
-        #endregion
-        #region Range setting
-        # def get_min_mz(li):
-        #     return min(li) if li else precursor_mz
-        # min_list = [get_min_mz(ref_mz_1), get_min_mz(ref_mz_2), get_min_mz(ref_mz_3)]
-        # cut_off_min = min(min_list)-50 if min(min_list) != precursor_mz else 300
-        # min_mz = cut_off_min
-        # x_max = math.ceil(precursor_mz/xtick_num)*xtick_num+5
-        # x_min = math.floor(min_mz/xtick_num)*xtick_num
-        # bar_width = math.floor(10*(x_max-x_min)/500)/10
+            # measured_oad_ions_1 = [li[1] for li in dict_1[0]['Measured peaks']]
+            # oad04_ions_1 = [[li[1], li[3]] for li in dict_1[0]['Ref peaks'] if 'OAD04' in li[0]]
+            # oad10_ions_1 = [[li[1], li[3]] for li in dict_1[0]['Ref peaks'] if 'OAD10' in li[0]]
         precursor_mz, ref_precursor_mz = graph_info['MS2 Mz'], graph_info['Ref precursor Mz']
         x_min, x_max = graph_info['x-range'][0], graph_info['x-range'][1]
         bar_width = graph_info['Bar_width']
@@ -1800,17 +2303,6 @@ class MSRIDD_GUI(tk.Frame):
         #endregion
         #region magnification setting
         final_magnification = graph_info['Magnification']
-        # max_ratio_list = []
-        # final_magnification= 1
-        # max_criteria = 30
-        # if measured_oad_ions_3:
-        #     max_ratio_list.append(max(measured_oad_ions_3))
-        # if measured_oad_ions_2:
-        #     max_ratio_list.append(max(measured_oad_ions_2))
-        # if measured_oad_ions_1:
-        #     max_ratio_list.append(max(measured_oad_ions_1))
-        # if max_ratio_list:
-        #     final_magnification = math.floor(max_criteria/max(max_ratio_list))
         #endregion
         #region matplotlib base setting
         fig = Figure(figsize=(fig_x, fig_y), dpi=dpi_setting)
@@ -1830,18 +2322,24 @@ class MSRIDD_GUI(tk.Frame):
         # ax.spines['top'].set_visible(False)
         #endregion
         #region Plotting OAD-MS/MS
-        total_fig_x = msms_df['frag m/z'].values.tolist()
-        total_fig_y = msms_df['Ratio(%)'].values.tolist()
+        ex_msms = msms_df[msms_df['frag m/z'] >= x_min]
+        total_fig_x = ex_msms['frag m/z'].values.tolist()
+        total_fig_y = ex_msms['Ratio(%)'].values.tolist()
+        # total_fig_x = msms_df['frag m/z'].values.tolist()
+        # total_fig_y = msms_df['Ratio(%)'].values.tolist()
         total_fig_y = [v*final_magnification for v in total_fig_y]
         ref_ratio_1 = [v*final_magnification for v in ref_ratio_1]
         ref_ratio_2 = [v*final_magnification for v in ref_ratio_2]
         ref_ratio_3 = [v*final_magnification for v in ref_ratio_3]
-        ax.bar(total_fig_x, total_fig_y, color=line_color, width=bar_width, linewidth=0)
+        ax.bar(total_fig_x, total_fig_y, color=line_color, width=bar_width, 
+               linewidth=0)
         ax.text(precursor_mz, 101, str(precursor_mz), 
             fontsize=precursor_mz_font_size, ha='center', va='bottom')
-        ax.bar(ref_precursor_mz, -99, color=moiety_1_color, width=bar_width, linewidth=0)
+        ax.bar(ref_precursor_mz, -99, color=moiety_1_color, width=bar_width, 
+               linewidth=0)
         ax.text(ref_precursor_mz, -125, str(ref_precursor_mz), 
-            fontsize=precursor_mz_font_size, ha='center', va='bottom', color=moiety_1_color)
+            fontsize=precursor_mz_font_size, ha='center', va='bottom', 
+            color=moiety_1_color)
         if ref_mz_1:
             ax.bar(ref_mz_1, ref_ratio_1, color=moiety_1_color, 
                 width=bar_width, linewidth=0)
@@ -1897,7 +2395,6 @@ class MSRIDD_GUI(tk.Frame):
     def set_re_analysis_condition(self):
         focused_item = self.get_focused_item()
         metabolite_name = focused_item[5]
-        pprint.pprint(self.temp_lipid_info)
         self.re_analysis_win = ReAnalysisWindow(
             master=self.master, name=metabolite_name, info=self.temp_lipid_info)
         self.re_analysis_win.start_btn["command"] \
@@ -1912,9 +2409,211 @@ class MSRIDD_GUI(tk.Frame):
         dbs_1 = self.extract_dbs(content1)
         dbs_2 = self.extract_dbs(content2)
         dbs_3 = self.extract_dbs(content3)
+        moiety_info = self.temp_lipid_info['Each moiety info']
+        unsaturated_num = self.temp_lipid_info['Unsaturated moiety']
+        def check_duplicates(new_dbs, oad_result_d, moiety_num):
+            moiety = f'Moiety-{moiety_num}'
+            old_dbs = [
+                v['Positions'] for rank, v in oad_result_d[moiety].items()]
+            dup_bools = []
+            for db in new_dbs:
+                if db in old_dbs:
+                    dup_bools.append(True)
+                else:
+                    dup_bools.append(False)
+            return any(dup_bools)
+        def check_db_num_matched(new_dbs, db_num):
+            unmatched_bools = []
+            for db in new_dbs:
+                unmatched_bools.append(len(db) != db_num)
+            return any(unmatched_bools)
+        def check_positions(new_dbs, c_num):
+            positions_bools = []
+            for db in new_dbs:
+                for pos in db:
+                    sub = c_num - pos
+                    b = (sub < 2) or (pos < 3)
+                    positions_bools.append(b)
+            if len(new_dbs[0]) > 1:
+                for db in new_dbs:
+                    for i in range(len(db)-1):
+                        sub = db[i+1] - db[i]
+                        positions_bools.append(sub < 2)
+            return any(positions_bools)
+        def show_dup_error_message():
+            messagebox.showerror(
+                "Duplicate error",
+                "Re-analysis candidate already exist.")
+        def show_unmatched_error_message():
+            messagebox.showerror(
+                "Unmatched error", 
+                "Number of double bonds is not matched.")
+        def show_position_error_message():
+            messagebox.showerror(
+                "C=C position error", 
+                "C=C position is not appropriate.")
         if any([dbs_1, dbs_2, dbs_3]):
-            self.re_analysis_win.close_window()
-            self.start_re_analysis(dbs_1, dbs_2, dbs_3)
+            idx = int(self.get_focused_item()[0])
+            temp_oad_result_d = self.oad_result_dict[idx]
+            dup1, dup2, dup3 = False, False, False
+            unmatch1, unmatch2, unmatch3 = False, False, False
+            pos1, pos2, pos3 = False, False, False
+            if len(moiety_info) == 2:
+                if dbs_1:
+                    c_num = moiety_info['chain-1']
+                    db_num = moiety_info['db-1']
+                    dup1 = check_duplicates(new_dbs=dbs_1, 
+                        oad_result_d=temp_oad_result_d, moiety_num=1)
+                    unmatch1 = check_db_num_matched(
+                        new_dbs=dbs_1, db_num=db_num)
+                    pos1 = check_positions(new_dbs=dbs_1, c_num=c_num)
+            elif len(moiety_info) == 4:
+                if unsaturated_num == 1:
+                    if dbs_1:
+                        c_num = moiety_info['chain-1']
+                        db_num = moiety_info['db-1']
+                        dup1 = check_duplicates(new_dbs=dbs_1, 
+                            oad_result_d=temp_oad_result_d, moiety_num=1)
+                        unmatch1 = check_db_num_matched(
+                            new_dbs=dbs_1, db_num=db_num)
+                        pos1 = check_positions(new_dbs=dbs_1, c_num=c_num)
+                    if dbs_2:
+                        c_num = moiety_info['chain-2']
+                        db_num = moiety_info['db-2']
+                        dup2 = check_duplicates(new_dbs=dbs_2, 
+                            oad_result_d=temp_oad_result_d, moiety_num=1)
+                        unmatch2 = check_db_num_matched(
+                            new_dbs=dbs_2, db_num=db_num)
+                        pos2 = check_positions(new_dbs=dbs_2, c_num=c_num)
+                elif unsaturated_num == 2:
+                    if dbs_1:
+                        c_num = moiety_info['chain-1']
+                        db_num = moiety_info['db-1']
+                        dup1 = check_duplicates(new_dbs=dbs_1, 
+                            oad_result_d=temp_oad_result_d, moiety_num=1)
+                        unmatch1 = check_db_num_matched(
+                            new_dbs=dbs_1, db_num=db_num)
+                        pos1 = check_positions(new_dbs=dbs_1, c_num=c_num)
+                    if dbs_2:
+                        c_num = moiety_info['chain-2']
+                        db_num = moiety_info['db-2']
+                        dup2 = check_duplicates(new_dbs=dbs_2, 
+                            oad_result_d=temp_oad_result_d, moiety_num=2) 
+                        unmatch2 = check_db_num_matched(
+                            new_dbs=dbs_2, db_num=db_num)
+                        pos2 = check_positions(new_dbs=dbs_2, c_num=c_num)
+            elif len(moiety_info) == 6:
+                if unsaturated_num == 1:
+                    if dbs_1:
+                        # if moiety_info['db-1'] > 0:
+                        #     c_num = moiety_info['chain-1']
+                        #     num, db_num = 1, moiety_info['db-1']
+                        # elif moiety_info['db-2'] > 0:
+                        #     c_num = moiety_info['chain-2']
+                        #     num, db_num = 2, moiety_info['db-2']
+                        # elif moiety_info['db-3'] > 0:
+                        #     c_num = moiety_info['chain-3']
+                        #     num, db_num = 3, moiety_info['db-3']
+                        c_num = moiety_info['chain-1']
+                        db_num = moiety_info['db-1']
+                        dup1 = check_duplicates(new_dbs=dbs_1, 
+                            oad_result_d=temp_oad_result_d, moiety_num=1)
+                        unmatch1 = check_db_num_matched(
+                            new_dbs=dbs_1, db_num=db_num)
+                        pos1 = check_positions(new_dbs=dbs_1, c_num=c_num)
+                    if dbs_2:
+                        c_num = moiety_info['chain-2']
+                        db_num = moiety_info['db-2']
+                        dup2 = check_duplicates(new_dbs=dbs_2, 
+                            oad_result_d=temp_oad_result_d, moiety_num=1)
+                        unmatch2 = check_db_num_matched(
+                            new_dbs=dbs_2, db_num=db_num)
+                        pos2 = check_positions(new_dbs=dbs_2, c_num=c_num)
+                    if dbs_3:
+                        c_num = moiety_info['chain-3']
+                        db_num = moiety_info['db-3']
+                        dup3 = check_duplicates(new_dbs=dbs_3, 
+                            oad_result_d=temp_oad_result_d, moiety_num=1)
+                        unmatch3 = check_db_num_matched(
+                            new_dbs=dbs_3, db_num=db_num)
+                        pos3 = check_positions(new_dbs=dbs_3, c_num=c_num)
+                elif unsaturated_num == 2:
+                    if dbs_1:
+                        c_num = moiety_info['chain-1']
+                        db_num = moiety_info['db-1']
+                        # if moiety_info['db-1'] > 0 and moiety_info['db-2'] > 0:
+                        #     c_num = moiety_info['chain-1']
+                        #     num, db_num = 1, moiety_info['db-1']
+                        # elif moiety_info['db-1'] > 0 and moiety_info['db-3'] > 0:
+                        #     c_num = moiety_info['chain-1']
+                        #     num, db_num = 1, moiety_info['db-1']
+                        # elif moiety_info['db-2'] > 0 and moiety_info['db-3'] > 0:
+                        #     c_num = moiety_info['chain-2']
+                        #     num, db_num = 2, moiety_info['db-2']
+                        dup1 = check_duplicates(new_dbs=dbs_1, 
+                            oad_result_d=temp_oad_result_d, moiety_num=1)
+                        unmatch1 = check_db_num_matched(
+                            new_dbs=dbs_1, db_num=db_num)
+                        pos1 = check_positions(new_dbs=dbs_1, c_num=c_num)
+                    if dbs_2:
+                        # c_num = moiety_info['chain-2']
+                        # num, db_num = 2, moiety_info['db-2']
+                        if moiety_info['db-1'] > 0 and moiety_info['db-2'] > 0:
+                            c_num = moiety_info['chain-2']
+                            num, db_num = 2, moiety_info['db-2']
+                        # elif moiety_info['db-1'] > 0 and moiety_info['db-3'] > 0:
+                        #     c_num = moiety_info['chain-3']
+                        #     num, db_num = 3, moiety_info['db-3']
+                        elif moiety_info['db-2'] > 0 and moiety_info['db-3'] > 0:
+                            c_num = moiety_info['chain-2']
+                            num, db_num = 1, moiety_info['db-2']
+                        dup2 = check_duplicates(new_dbs=dbs_2, 
+                            oad_result_d=temp_oad_result_d, moiety_num=num)
+                        unmatch2 = check_db_num_matched(
+                            new_dbs=dbs_2, db_num=db_num)
+                        pos2 = check_positions(new_dbs=dbs_2, c_num=c_num)
+                    if dbs_3:
+                        c_num = moiety_info['chain-3']
+                        db_num = moiety_info['db-3']
+                        dup3 = check_duplicates(new_dbs=dbs_3, 
+                            oad_result_d=temp_oad_result_d, moiety_num=2)
+                        unmatch3 = check_db_num_matched(
+                            new_dbs=dbs_3, db_num=db_num)
+                        pos3 = check_positions(new_dbs=dbs_3, c_num=c_num)
+                elif unsaturated_num == 3:
+                    if dbs_1:
+                        c_num = moiety_info['chain-1']
+                        db_num = moiety_info['db-1']
+                        dup1 = check_duplicates(new_dbs=dbs_1, 
+                            oad_result_d=temp_oad_result_d, moiety_num=1)
+                        unmatch1 = check_db_num_matched(
+                            new_dbs=dbs_1, db_num=db_num)
+                        pos1 = check_positions(new_dbs=dbs_1, c_num=c_num)
+                    if dbs_2:
+                        c_num = moiety_info['chain-2']
+                        db_num = moiety_info['db-2']
+                        dup2 = check_duplicates(new_dbs=dbs_2, 
+                            oad_result_d=temp_oad_result_d, moiety_num=2)
+                        unmatch2 = check_db_num_matched(
+                            new_dbs=dbs_2, db_num=db_num)
+                        pos2 = check_positions(new_dbs=dbs_2, c_num=c_num)
+                    if dbs_3:
+                        c_num = moiety_info['chain-3']
+                        db_num = moiety_info['db-3']
+                        dup3 = check_duplicates(new_dbs=dbs_3, 
+                            oad_result_d=temp_oad_result_d, moiety_num=3)
+                        unmatch3 = check_db_num_matched(
+                            new_dbs=dbs_3, db_num=db_num)
+                        pos3 = check_positions(new_dbs=dbs_3, c_num=c_num)
+            if any([dup1, dup2, dup3]):
+                show_dup_error_message()
+            elif any([unmatch1, unmatch2, unmatch3]):
+                show_unmatched_error_message()
+            elif any([pos1, pos2, pos3]):
+                show_position_error_message()
+            else:
+                self.re_analysis_win.close_window()
+                self.start_re_analysis(dbs_1, dbs_2, dbs_3)
         else:
             messagebox.showerror(
                 "Empty error", """Please set C=C positional candidates.""")
@@ -1924,6 +2623,7 @@ class MSRIDD_GUI(tk.Frame):
             comb_list = text.split('\n')
             dbs_list = [re.findall(r'\d+', comb) for comb in comb_list]
             dbs_list = [tuple(map(int, comb)) for comb in dbs_list]
+            dbs_list = list(dict.fromkeys(dbs_list))
             return dbs_list
         else:
             return []
@@ -1932,9 +2632,13 @@ class MSRIDD_GUI(tk.Frame):
         thread_1 = threading.Thread(
             target=self.re_analysis, args=(dbs_1, dbs_2, dbs_3))
         thread_2 = threading.Thread(
-            target=self.create_re_analysis_prgbar_window)
+            target=self.create_re_analysis_popup_win)
         thread_1.start()
         thread_2.start()
+
+    def create_re_analysis_popup_win(self):
+        self.temp_popup = PopUpWindow(master=self.master,
+            title='Re-analysis in progress', message='Re-analizing ...')
 
     def create_re_analysis_prgbar_window(self):
         self.temp_prgbar = ProgressBar(self.master,
@@ -1953,70 +2657,97 @@ class MSRIDD_GUI(tk.Frame):
             db_num = self.temp_lipid_info['Each moiety info']['db-1']
             sph_set = [db_in_SPB, c_num]
             for comb in dbs_1:
-                ref_oad_d = ReAnalyzer.generate_ref_oad_nl_and_type(
+                ref_oad_d_1 = ReAnalyzer.generate_ref_oad_nl_and_type(
                     each_comb=comb, ontology=ontology, deuterium=deuterium)
-                re_anal_bool = ReAnalyzer.query_essential_diagnostic_ions(
-                    df=self.temp_msms_df, ref_oad_dict=ref_oad_d, 
+                re_anal_bool_1 = ReAnalyzer.query_essential_diagnostic_ions(
+                    df=self.temp_msms_df, ref_oad_dict=ref_oad_d_1, 
                     db_in_SPB=db_in_SPB, c_num=c_num, db_num=db_num,
                     tolerance=ms_tol,
                     must_nl_cut_off_dict=self.must_nl_cut_off_dict,
                     structure_dict=self.temp_lipid_info)
-                print(re_anal_bool)
-                score_dict = ReAnalyzer.calc_presence_ratios_and_score(
-                    ref_oad_dict=ref_oad_d, cut_df=self.temp_msms_df,
+                n_description_1 = self.check_ion_lacking_pos(re_anal_bool_1)
+                score_dict_1 = ReAnalyzer.calc_presence_ratios_and_score(
+                    ref_oad_dict=ref_oad_d_1, cut_df=self.temp_msms_df,
                     ref_precursor_mz=ref_mz, ms_tol_ppm=self.ms_tolerance_ppm,
                     sph_set=sph_set)
-                self.set_re_analysis_result(
-                    re_analysis_moiety=1, idx=idx, score_d=score_dict)
+                score_dict_1[0]['N-description'] = n_description_1
+                key1 = self.set_re_analysis_result(
+                    re_analysis_moiety=1, idx=idx, score_d=score_dict_1)
+            # self.re_arrange_oad_dict(idx=idx, key=key1)
         if dbs_2:
             c_num = self.temp_lipid_info['Each moiety info']['chain-2']
             db_num = self.temp_lipid_info['Each moiety info']['db-2']
             sph_set = [False, c_num]
             for comb in dbs_2:
-                ref_oad_d = ReAnalyzer.generate_ref_oad_nl_and_type(
+                ref_oad_d_2 = ReAnalyzer.generate_ref_oad_nl_and_type(
                     each_comb=comb, ontology=ontology, deuterium=deuterium)
-                re_anal_bool = ReAnalyzer.query_essential_diagnostic_ions(
-                    df=self.temp_msms_df, ref_oad_dict=ref_oad_d, 
+                re_anal_bool_2 = ReAnalyzer.query_essential_diagnostic_ions(
+                    df=self.temp_msms_df, ref_oad_dict=ref_oad_d_2, 
                     db_in_SPB=db_in_SPB, c_num=c_num, db_num=db_num,
                     tolerance=ms_tol,
                     must_nl_cut_off_dict=self.must_nl_cut_off_dict,
                     structure_dict=self.temp_lipid_info)
-                print(re_anal_bool)
-                score_dict = ReAnalyzer.calc_presence_ratios_and_score(
-                    ref_oad_dict=ref_oad_d, cut_df=self.temp_msms_df,
+                n_description_2 = self.check_ion_lacking_pos(re_anal_bool_2)
+                score_dict_2 = ReAnalyzer.calc_presence_ratios_and_score(
+                    ref_oad_dict=ref_oad_d_2, cut_df=self.temp_msms_df,
                     ref_precursor_mz=ref_mz, ms_tol_ppm=self.ms_tolerance_ppm,
                     sph_set=sph_set)
-                self.set_re_analysis_result(
-                    re_analysis_moiety=2, idx=idx, score_d=score_dict)
+                score_dict_2[0]['N-description'] = n_description_2
+                key2= self.set_re_analysis_result(
+                    re_analysis_moiety=2, idx=idx, score_d=score_dict_2)
+            # self.re_arrange_oad_dict(idx=idx, key=key2)
         if dbs_3:
             c_num = self.temp_lipid_info['Each moiety info']['chain-3']
             db_num = self.temp_lipid_info['Each moiety info']['db-3']
             sph_set = [False, c_num]
             for comb in dbs_3:
-                ref_oad_d = ReAnalyzer.generate_ref_oad_nl_and_type(
+                ref_oad_d_3 = ReAnalyzer.generate_ref_oad_nl_and_type(
                     each_comb=comb, ontology=ontology, deuterium=deuterium)
-                re_anal_bool = ReAnalyzer.query_essential_diagnostic_ions(
-                    df=self.temp_msms_df, ref_oad_dict=ref_oad_d, 
+                re_anal_bool_3 = ReAnalyzer.query_essential_diagnostic_ions(
+                    df=self.temp_msms_df, ref_oad_dict=ref_oad_d_3, 
                     db_in_SPB=db_in_SPB, c_num=c_num, db_num=db_num,
                     tolerance=ms_tol,
                     must_nl_cut_off_dict=self.must_nl_cut_off_dict,
                     structure_dict=self.temp_lipid_info)
-                score_dict = ReAnalyzer.calc_presence_ratios_and_score(
-                    ref_oad_dict=ref_oad_d, cut_df=self.temp_msms_df,
+                n_description_3 = self.check_ion_lacking_pos(re_anal_bool_3)
+                score_dict_3 = ReAnalyzer.calc_presence_ratios_and_score(
+                    ref_oad_dict=ref_oad_d_3, cut_df=self.temp_msms_df,
                     ref_precursor_mz=ref_mz, ms_tol_ppm=self.ms_tolerance_ppm,
                     sph_set=sph_set)
-                self.set_re_analysis_result(
-                    re_analysis_moiety=3, idx=idx, score_d=score_dict)
-        pprint.pprint(self.oad_result_dict[idx])
-        self.update_db_trees(result_dict=self.oad_result_dict[idx])
+                score_dict_3[0]['N-description'] = n_description_3
+                key3 = self.set_re_analysis_result(
+                    re_analysis_moiety=3, idx=idx, score_d=score_dict_3)
+            # self.re_arrange_oad_dict(idx=idx, key=key3)
+        auto_magnification = self.graph_dict[idx]['OAD']['Magnification']
+        self.graph_dict[idx]['OAD'] = ReAnalyzer.set_oad_graph_dict_value(
+            oad_dict=self.oad_result_dict[idx], lipid_info=self.temp_lipid_info,
+            auto_magnification=auto_magnification)
+        self.temp_graph_info = self.graph_dict[idx]
+        self.update_db_trees(
+            result_dict=self.oad_result_dict[idx], masstable=False)
         self.focus_and_select_db_trees()
-        time.sleep(0.1)
-        self.temp_prgbar.close_window()
-    
+        self.temp_popup.close_window()
+
+    def re_arrange_oad_dict(self, idx, key):
+        unresolved_d = {'Positions': '', 'N-description': 'Unresolved',
+                        'Score': '###', 'Ratio sum': '###', 'Presence': '###',
+                        'Notice': 'Unresolved', 
+                        'Measured peaks': [[0, 0, 0]], 
+                        'Ref peaks': [['', 0, 0, 0]], 
+                        'Peaks dict': {'none': [0, 0, 0, 0, 0]}
+                        }
+        moiety_d = self.oad_result_dict[idx][key].copy()
+        removed = moiety_d.pop('Determined db')
+        temp_d = {i: v for i, (rank, v) in enumerate(moiety_d.items())
+                  if v['N-description'] != 'Unresolved'}
+        new_d = {j: v for j, (rank, v) in enumerate(temp_d.items())}
+        new_d[len(new_d)] = unresolved_d
+        new_d['Determined db'] = new_d[0]
+        self.oad_result_dict[idx][key] = new_d
+
     def set_re_analysis_result(self, re_analysis_moiety, idx, score_d):
         unsaturated_moiety_num = self.temp_lipid_info['Unsaturated moiety']
         moiety_info = self.temp_lipid_info['Each moiety info']
-        moiety_num = self.temp_lipid_info['Valid moiety num']
         if unsaturated_moiety_num == 1:
             #ex) LPC 18:1, PI 18:0_20:4, TG 14:0_16:0_18:1
             key = 'Moiety-1'
@@ -2025,9 +2756,9 @@ class MSRIDD_GUI(tk.Frame):
                 #ex) PC 18:1_18:2, TG 14:0_16:1_18:1
                 key = 'Moiety-1'
             if re_analysis_moiety == 2:
-                if moiety_num == 2:
+                if len(moiety_info) == 4:
                     key = 'Moiety-2'
-                if moiety_num == 3:
+                if len(moiety_info) == 6:
                     if moiety_info['db-1'] > 0:
                         key = 'Moiety-2'
                     else:
@@ -2038,15 +2769,26 @@ class MSRIDD_GUI(tk.Frame):
             #ex) TG 14:1_16:1_18:1, Cer 18:1;2O/32:1(O-18:2)
             key = f'Moiety-{re_analysis_moiety}'
         moiety = self.oad_result_dict[idx][key]
-        if moiety:
-            last = len(moiety)-1
-            self.oad_result_dict[idx][key][last] = score_d[0]
-        else:
-            self.oad_result_dict[idx][key][0] = score_d[0]
-            self.oad_result_dict[idx][key]['Determined db'] = score_d[0]
+        last = len(moiety) -1
+        self.oad_result_dict[idx][key][last] = score_d[0]
+        return key
 
-    def check_ion_lacking_pos(self):
-        pass
+    def check_ion_lacking_pos(self, re_anal_bool):
+        for key, bools in re_anal_bool.items():
+            if len(key) == 1:
+                n_description = f'n-{key[0]}*'
+            for i, (pos, b) in enumerate(zip(key, bools)):
+                if i == 0:
+                    if b == True:
+                        n_description = f'n-{pos}'
+                    else:
+                        n_description = f'n-{pos}*'
+                else:
+                    if b == True:
+                        n_description += f',{pos}'
+                    else:
+                        n_description += f',{pos}*'
+        return n_description
 
     #endregion
 
@@ -2493,9 +3235,6 @@ class ReAnalysisWindow(object):
             self.text3['state'] = tk.DISABLED
             self.text3['bg'] = lock_color
 
-    def check_duplicates(self):
-        pass
-
     def center_position(self, win, width, height):
         x = (win.winfo_screenwidth() // 2) - (width // 2)
         y = (win.winfo_screenheight() // 2) - (height // 2)
@@ -2503,6 +3242,81 @@ class ReAnalysisWindow(object):
 
     def close_window(self):
         self.window.destroy()
+
+class VerticalProgressBars(object):
+    def __init__(self, master, title, start_text):
+        self.vert_prgbars_win = tk.Toplevel(master)
+        self.vert_prgbars_win.attributes('-topmost', True)
+        self.center_position(self.vert_prgbars_win, width=690, height=155)
+        self.vert_prgbars_win.resizable(width=False, height=False)
+        self.vert_prgbars_win.title(title)
+        self.vert_prgbars_win.grab_set()
+        self.vert_prgbars_win.iconphoto(False, tk.PhotoImage(file=IconPath))
+        self.vert_prgbars_win.protocol(
+            'WM_DELETE_WINDOW', lambda : self.close_window())
+        self.start_text = start_text
+        self.create_widgets()
+        self.running = True
+        # self.process_timer()
+
+    def center_position(self, win, width, height):
+        x = (win.winfo_screenwidth() // 2) - (width // 2)
+        y = (win.winfo_screenheight() // 2) - (height // 2)
+        win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
+
+    def create_widgets(self):
+        # Section Bar
+        self.section_bar = ttk.Progressbar(self.vert_prgbars_win, 
+            orient='horizontal', length=534, mode='determinate')
+        self.section_bar.place(x=30, y=30)
+        self.section_report = tk.StringVar()
+        self.section_report.set(self.start_text)
+        section_label = ttk.Label(self.vert_prgbars_win, 
+            textvariable=self.section_report, font=("", 14))
+        section_label.place(x=30, y=55)
+        # Section Timer
+        self.section_timer = tk.StringVar()
+        self.section_timer_label = ttk.Label(
+            self.vert_prgbars_win, 
+            textvariable=self.section_timer, font=("", 14))
+        self.section_timer_label.place(x=580, y=28)
+        self.section_timer.set("00:00:00")
+        # Each progress
+        self.each_prgbar = ttk.Progressbar(self.vert_prgbars_win, 
+            orient='horizontal', length=620, mode='determinate')
+        self.each_prgbar.place(x=30, y=90)
+        self.each_report = tk.StringVar()
+        self.each_report.set("")
+        each_label = ttk.Label(self.vert_prgbars_win, 
+            textvariable=self.each_report, font=("", 14))
+        each_label.place(x=30, y=115)
+        # Each progress Timer
+        self.small_timer = tk.StringVar()
+
+    def process_timer(self):
+        hour = 0
+        minute = 0
+        second = 0
+        while self.running:
+            second += 1
+            time.sleep(1)
+            if second == 60:
+                minute += 1
+                second = 0
+                if minute == 60:
+                    minute = 0
+                    hour += 1
+            if minute >= 10 and second >= 10:
+                self.section_timer.set(f'0{hour}:{minute}:{second}')
+            elif minute < 10 and second >= 10:
+                self.section_timer.set(f'0{hour}:0{minute}:{second}')
+            elif minute >= 10 and second < 10:
+                self.section_timer.set(f'0{hour}:{minute}:0{second}')
+            else:
+                self.section_timer.set(f'0{hour}:0{minute}:0{second}')
+
+    def close_window(self):
+        self.vert_prgbars_win.destroy()
 
 #region Utilities
 def math_floor(num, digit):
@@ -2570,6 +3384,50 @@ def check_lipid_category(category, target):
 
 #endregion
 
+#region Text format exporter
+def text_sheet_exporter(path, target_table, cid, oad, structure_info, 
+    normalized, stamp):
+    ion_v_col = 'pmol/mg tissue' if normalized else 'Height'
+    idxs = target_table['ID'].values
+    alignment_ids = [-1 for _ in range(len(idxs))]
+    if 'Alignment ID' in target_table.columns:
+        alignment_ids = target_table['Alignment ID'].values
+    moiety_info = [fill_in_oad_result_on_summary_df(i, oad[idx]) 
+                   for i, idx in enumerate(idxs)]
+    data_d = {'ID': target_table['ID'].values, 
+              'RT': target_table['RT(min)'].values, 
+              'MS1 m/z': target_table['Precursor m/z'].values, 
+              'Ref m/z': [structure_info[i]['Ref precursor Mz'] 
+                          for i in idxs], 
+              'Precise m/z': target_table['Precise m/z'].values, 
+              'm/z type': target_table['Precise m/z type'].values, 
+              'Metabolite name': target_table['Metabolite name'].values, 
+              'OAD result name': target_table['OAD result name'].values, 
+              'Comment': target_table['User comment'].values, 
+              'Data from': target_table['Data from'].values, 
+              ion_v_col: target_table[ion_v_col].values, 
+              'Manually changed': [v[3] for v in moiety_info], 
+              'Moiety1 Result': [v[0] for v in moiety_info], 
+              'Moiety2 Result': [v[1] for v in moiety_info], 
+              'Moiety3 Result': [v[2] for v in moiety_info], 
+              'Moiety1 resolved': [v[4] for v in moiety_info], 
+              'Moiety2 resolved': [v[5] for v in moiety_info], 
+              'Moiety3 resolved': [v[6] for v in moiety_info],
+              'C=C in Moiety1': [v[7] for v in moiety_info], 
+              'C=C in Moiety2': [v[8] for v in moiety_info], 
+              'C=C in Moiety3': [v[9] for v in moiety_info], 
+              'Ontology': target_table['Ontology'].values, 
+              'Heads': [cid[i]['Lipid subclass']['Presence'] 
+                        if cid[i]['Lipid subclass'] else 0 for i in idxs], 
+              'Moiety': [cid[i]['Moiety']['Presence'] 
+                         if cid[i]['Moiety'] else 0 for i in idxs], 
+              'Alignment ID': alignment_ids}
+    summary_df = pd.DataFrame(data_d, index=range(len(target_table)))
+    summary_df = summary_df.dropna(how='all')
+    excel_path = path + '/' + stamp + '_MSRIDD_Analysis_Result.txt'
+    summary_df.to_csv(excel_path, sep='\t', index=False)
+#endregion
+
 #region Excel exporter
 def find_null_cell(excel_sheet):
     """ Find null cell in excel sheet to add new value. 
@@ -2603,7 +3461,7 @@ def write_dataframe_into_excel_sheet(sheet, df, msms_df, cid, oad, lipid_info):
     #                'Validated num': 0 ~ 3,
     #                'Each bools': [True, False, ...], 
     #                'Moiety-1': {0: {'Positions': '',
-    #                                 'N-discription': '',
+    #                                 'N-description': '',
     #                                 'Score': float,
     #                                 'Ratio sum': float,
     #                                 'Presence': float,
@@ -2612,7 +3470,7 @@ def write_dataframe_into_excel_sheet(sheet, df, msms_df, cid, oad, lipid_info):
     #                                },
     #                             1: {....},
     #                             'Determined db: {'Positions': '',
-    #                                              'N-discription': '',
+    #                                              'N-description': '',
     #                                              'Score': float,
     #                                              'Ratio sum': float,
     #                                              'Presence': float,
@@ -2628,10 +3486,10 @@ def write_dataframe_into_excel_sheet(sheet, df, msms_df, cid, oad, lipid_info):
     cid_head, cid_moiety = cid['Lipid subclass'], cid['Moiety']
     for key, li in cid_head.items():
         if key != 'Presence':
-            cid_result_txt += key + '= m/z ' + str(li[1]) + '(ppm=' + str(li[4]) + ')\n'
+            cid_result_txt += key + '= m/z '+str(li[1])+'(ppm='+str(li[4])+')\n'
     for key, li in cid_moiety.items():
         if key != 'Presence':
-            cid_result_txt += key + '= m/z ' + str(li[1]) + '(ppm=' + str(li[4]) + ')\n'
+            cid_result_txt += key + '= m/z '+str(li[1])+'(ppm='+str(li[4])+')\n'
     head_percent = cid_head['Presence'] if cid_head else 0
     moiety_percent = cid_moiety['Presence'] if cid_moiety else 0
     cid_result_txt += 'Head= ' + str(head_percent) + '%\n'
@@ -2641,25 +3499,32 @@ def write_dataframe_into_excel_sheet(sheet, df, msms_df, cid, oad, lipid_info):
         txt = ''
         for rank, d in moiety.items():
             if rank != 'Determined db':
-                txt += 'Position= ' + d['N-discription'] + ', ' + 'Score= ' \
+                txt += 'Position= ' + d['N-description'] + ', ' + 'Score= ' \
                 + str(d['Score']) + ', ' + 'Presence= ' + str(d['Presence']) + ', ' \
                 + 'Ratio sum= ' + str(d['Ratio sum']) + '\n'
         return txt
     def get_result_info(moiety):
-        no1_pos, no2_pos, no3_pos = '', '', ''
-        no1_score, no2_score, no3_score = 0, 0, 0
-        no1_presence, no2_presence, no3_presence = 0, 0, 0
-        no1_ratio, no2_ratio, no3_ratio = 0, 0, 0
+        no1_pos, no2_pos, no3_pos = 'N/A', 'N/A', 'N/A'
+        no1_score, no2_score, no3_score = 'N/A', 'N/A', 'N/A'
+        no1_presence, no2_presence, no3_presence = 'N/A', 'N/A', 'N/A'
+        no1_ratio, no2_ratio, no3_ratio = 'N/A', 'N/A', 'N/A'
+        key1, key2, key3, key4 = 'N-description','Score','Presence','Ratio sum'
         for rank, d in moiety.items():
             if rank == 0:
                 no1_pos, no1_score, no1_presence, no1_ratio \
-                = d['N-discription'], d['Score'], d['Presence'], d['Ratio sum']
+                = d[key1], d[key2], d[key3], d[key4]
             if rank == 1:
-                no2_pos, no2_score, no2_presence, no2_ratio \
-                = d['N-discription'], d['Score'], d['Presence'], d['Ratio sum']
+                if d[key1] == 'Unresolved':
+                    pass
+                else:
+                    no2_pos, no2_score, no2_presence, no2_ratio \
+                    = d[key1], d[key2], d[key3], d[key4]
             if rank == 2:
-                no3_pos, no3_score, no3_presence, no3_ratio \
-                = d['N-discription'], d['Score'], d['Presence'], d['Ratio sum']
+                if d[key1] == 'Unresolved':
+                    pass
+                else:
+                    no3_pos, no3_score, no3_presence, no3_ratio \
+                    = d[key1], d[key2], d[key3], d[key4]
         return no1_pos, no2_pos, no3_pos, no1_score, no2_score, no3_score, \
         no1_presence, no2_presence, no3_presence, no1_ratio, no2_ratio, no3_ratio
     #region fill in basic information
@@ -2885,7 +3750,7 @@ def write_dataframe_into_excel_sheet(sheet, df, msms_df, cid, oad, lipid_info):
     return sheet
 
 def excel_sheet_exporter2(path, target_table, msms, cid, oad, structure_info, 
-    normalized, stamp):
+    normalized, stamp, each_bar, each_rep):
     #region CID result dict structure
     # cid_dict = {'Lipid subclass': {'Glycine': [ref_mz, measured_mz, ppm],
     #                                'Presence': 50.00},
@@ -2898,7 +3763,7 @@ def excel_sheet_exporter2(path, target_table, msms, cid, oad, structure_info,
     #                'Validated num': 0 ~ 3,
     #                'Each bools': [True, False, ...], 
     #                'Moiety-1': {0: {'Positions': '',
-    #                                 'N-discription': '',
+    #                                 'N-description': '',
     #                                 'Score': float,
     #                                 'Ratio sum': float,
     #                                 'Presence': float,
@@ -2907,7 +3772,7 @@ def excel_sheet_exporter2(path, target_table, msms, cid, oad, structure_info,
     #                                },
     #                             1: {....},
     #                             'Determined db: {'Positions': '',
-    #                                              'N-discription': '',
+    #                                              'N-description': '',
     #                                              'Score': float,
     #                                              'Ratio sum': float,
     #                                              'Presence': float,
@@ -2968,7 +3833,6 @@ def excel_sheet_exporter2(path, target_table, msms, cid, oad, structure_info,
         sheet_names = wb.sheetnames
         if new_ontology_candidate in sheet_names:
             sheetname = check_max_col_in_sheet(wb, new_ontology_candidate, i)
-            # sheet = wb.get_sheet_by_name(sheetname)
             sheet = wb[sheetname]
         else:
             sheet = wb.create_sheet(title=new_ontology_candidate)
@@ -2976,7 +3840,11 @@ def excel_sheet_exporter2(path, target_table, msms, cid, oad, structure_info,
         sheet = write_dataframe_into_excel_sheet(sheet=sheet, 
             df=df, msms_df=msms_df, cid=cid_result, oad=oad_result, 
             lipid_info=lipid_info)
-        print(f'Export\t{i+1}/{total}: {time.time() - start:.4f} [sec]')
+        each_rep.set(
+            f'Exporting {i+1}/{total} >>> {time.time()-start:.3f} [sec]')
+        each_bar.step(1)
+    each_bar.step(0.99)
+    each_rep.set(f'Saving files...')
     summary_df = summary_df.dropna(how='all')
     wb._sheets.sort(key=lambda ws: ws.title)
     sheet = wb.create_sheet(index=0, title='Summary')
@@ -3003,7 +3871,7 @@ def excel_sheet_exporter(path, target_table, msms, cid, oad, structure_info,
     #                'Validated num': 0 ~ 3,
     #                'Each bools': [True, False, ...], 
     #                'Moiety-1': {0: {'Positions': '',
-    #                                 'N-discription': '',
+    #                                 'N-description': '',
     #                                 'Score': float,
     #                                 'Ratio sum': float,
     #                                 'Presence': float,
@@ -3012,7 +3880,7 @@ def excel_sheet_exporter(path, target_table, msms, cid, oad, structure_info,
     #                                },
     #                             1: {....},
     #                             'Determined db: {'Positions': '',
-    #                                              'N-discription': '',
+    #                                              'N-description': '',
     #                                              'Score': float,
     #                                              'Ratio sum': float,
     #                                              'Presence': float,
@@ -3109,15 +3977,15 @@ def fill_in_oad_result_on_summary_df(row, oad_result):
     def get_rearragned_txt(moiety):
         txt = ''
         for rank, d in moiety.items():
-            if rank != 'Determined db':
-                txt += 'Position= ' + d['N-discription'] + ', ' + 'Score= ' \
-                + str(d['Score']) + ', ' + 'Presence= ' + str(d['Presence']) + ', ' \
-                + 'Ratio sum= ' + str(d['Ratio sum']) + '\n'
+            if rank == 'Determined db' or d['N-description'] == 'Unresolved':
+                continue
+            txt += (f"Position= {d['N-description']}, Score= {d['Score']},"
+                    +f"Presence= {d['Presence']}, Ratio sum= {d['Ratio sum']}\n")
         return txt
     if len(oad_result) == 4:
         if any(oad_result['Each bools']):
             moiety_1_result = get_rearragned_txt(oad_result['Moiety-1'])
-            db_1 = oad_result['Moiety-1']['Determined db']['N-discription']
+            db_1 = oad_result['Moiety-1']['Determined db']['N-description']
             resolved_1 = 'True'
             if 'Modified' in oad_result['Moiety-1']['Determined db']['Notice']:
                 manually_changed = 'True'
@@ -3128,15 +3996,15 @@ def fill_in_oad_result_on_summary_df(row, oad_result):
         if all(oad_result['Each bools']):
             moiety_1_result = get_rearragned_txt(oad_result['Moiety-1'])
             moiety_2_result = get_rearragned_txt(oad_result['Moiety-2'])
-            db_1 = oad_result['Moiety-1']['Determined db']['N-discription']
-            db_2 = oad_result['Moiety-2']['Determined db']['N-discription']
+            db_1 = oad_result['Moiety-1']['Determined db']['N-description']
+            db_2 = oad_result['Moiety-2']['Determined db']['N-description']
             resolved_1, resolved_2 = 'True', 'True'
             if ('Modified' in oad_result['Moiety-1']['Determined db']['Notice']
                 or 'Modified' in oad_result['Moiety-2']['Determined db']['Notice']):
                 manually_changed = 'True'
         elif oad_result['Each bools'][0]:
             moiety_1_result = get_rearragned_txt(oad_result['Moiety-1'])
-            db_1 = oad_result['Moiety-1']['Determined db']['N-discription']
+            db_1 = oad_result['Moiety-1']['Determined db']['N-description']
             db_2 = 'n-'
             resolved_1, resolved_2 = 'True', 'False'
             if 'Modified' in oad_result['Moiety-1']['Determined db']['Notice']:
@@ -3144,7 +4012,7 @@ def fill_in_oad_result_on_summary_df(row, oad_result):
         elif oad_result['Each bools'][1]:
             moiety_2_result = get_rearragned_txt(oad_result['Moiety-2'])
             db_1 = 'n-'
-            db_2 = oad_result['Moiety-2']['Determined db']['N-discription']
+            db_2 = oad_result['Moiety-2']['Determined db']['N-description']
             resolved_1, resolved_2 = 'False', 'True'
             if 'Modified' in oad_result['Moiety-2']['Determined db']['Notice']:
                 manually_changed = 'True'
@@ -3156,9 +4024,9 @@ def fill_in_oad_result_on_summary_df(row, oad_result):
             moiety_1_result = get_rearragned_txt(oad_result['Moiety-1'])
             moiety_2_result = get_rearragned_txt(oad_result['Moiety-2'])
             moiety_3_result = get_rearragned_txt(oad_result['Moiety-3'])
-            db_1 = oad_result['Moiety-1']['Determined db']['N-discription']
-            db_2 = oad_result['Moiety-2']['Determined db']['N-discription']
-            db_3 = oad_result['Moiety-3']['Determined db']['N-discription']
+            db_1 = oad_result['Moiety-1']['Determined db']['N-description']
+            db_2 = oad_result['Moiety-2']['Determined db']['N-description']
+            db_3 = oad_result['Moiety-3']['Determined db']['N-description']
             resolved_1, resolved_2, resolved_3 = 'True', 'True', 'True'
             if ('Modified' in oad_result['Moiety-1']['Determined db']['Notice']
                 or 'Modified' in oad_result['Moiety-2']['Determined db']['Notice']
@@ -3168,8 +4036,8 @@ def fill_in_oad_result_on_summary_df(row, oad_result):
             moiety_2_result = get_rearragned_txt(oad_result['Moiety-2'])
             moiety_3_result = get_rearragned_txt(oad_result['Moiety-3'])
             db_1 = 'n-'
-            db_2 = oad_result['Moiety-2']['Determined db']['N-discription']
-            db_3 = oad_result['Moiety-3']['Determined db']['N-discription']
+            db_2 = oad_result['Moiety-2']['Determined db']['N-description']
+            db_3 = oad_result['Moiety-3']['Determined db']['N-description']
             resolved_1, resolved_2, resolved_3 = 'False', 'True', 'True'
             if ('Modified' in oad_result['Moiety-2']['Determined db']['Notice']
                 or 'Modified' in oad_result['Moiety-3']['Determined db']['Notice']):
@@ -3177,9 +4045,9 @@ def fill_in_oad_result_on_summary_df(row, oad_result):
         elif oad_result['Each bools'][2] and oad_result['Each bools'][0]:
             moiety_1_result = get_rearragned_txt(oad_result['Moiety-1'])
             moiety_3_result = get_rearragned_txt(oad_result['Moiety-3'])
-            db_1 = oad_result['Moiety-1']['Determined db']['N-discription']
+            db_1 = oad_result['Moiety-1']['Determined db']['N-description']
             db_2 = 'n-'
-            db_3 = oad_result['Moiety-3']['Determined db']['N-discription']
+            db_3 = oad_result['Moiety-3']['Determined db']['N-description']
             resolved_1, resolved_2, resolved_3 = 'True', 'False', 'True'
             if ('Modified' in oad_result['Moiety-1']['Determined db']['Notice']
                 or 'Modified' in oad_result['Moiety-3']['Determined db']['Notice']):
@@ -3187,8 +4055,8 @@ def fill_in_oad_result_on_summary_df(row, oad_result):
         elif oad_result['Each bools'][1] and oad_result['Each bools'][0]:
             moiety_1_result = get_rearragned_txt(oad_result['Moiety-1'])
             moiety_2_result = get_rearragned_txt(oad_result['Moiety-2'])
-            db_1 = oad_result['Moiety-1']['Determined db']['N-discription']
-            db_2 = oad_result['Moiety-2']['Determined db']['N-discription']
+            db_1 = oad_result['Moiety-1']['Determined db']['N-description']
+            db_2 = oad_result['Moiety-2']['Determined db']['N-description']
             db_3 = 'n-'
             resolved_1, resolved_2, resolved_3 = 'True', 'True', 'False'
             if ('Modified' in oad_result['Moiety-1']['Determined db']['Notice']
@@ -3197,21 +4065,21 @@ def fill_in_oad_result_on_summary_df(row, oad_result):
         elif oad_result['Each bools'][2]:
             moiety_3_result = get_rearragned_txt(oad_result['Moiety-3'])
             db_1, db_2 = 'n-', 'n-'
-            db_3 = oad_result['Moiety-3']['Determined db']['N-discription']
+            db_3 = oad_result['Moiety-3']['Determined db']['N-description']
             resolved_1, resolved_2, resolved_3 = 'False', 'False', 'True'
             if 'Modified' in oad_result['Moiety-3']['Determined db']['Notice']:
                 manually_changed = 'True'
         elif oad_result['Each bools'][1]:
             moiety_2_result = get_rearragned_txt(oad_result['Moiety-2'])
             db_1, db_3 = 'n-', 'n-'
-            db_2 = oad_result['Moiety-2']['Determined db']['N-discription']
+            db_2 = oad_result['Moiety-2']['Determined db']['N-description']
             resolved_1, resolved_2, resolved_3 = 'False', 'True', 'False'
             if 'Modified' in oad_result['Moiety-2']['Determined db']['Notice']:
                 manually_changed = 'True'
         elif oad_result['Each bools'][0]:
             moiety_1_result = get_rearragned_txt(oad_result['Moiety-1'])
             db_2, db_3 = 'n-', 'n-'
-            db_1 = oad_result['Moiety-1']['Determined db']['N-discription']
+            db_1 = oad_result['Moiety-1']['Determined db']['N-description']
             resolved_1, resolved_2, resolved_3 = 'True', 'False', 'False'
             if 'Modified' in oad_result['Moiety-1']['Determined db']['Notice']:
                 manually_changed = 'True'
@@ -3224,7 +4092,7 @@ def fill_in_oad_result_on_summary_df(row, oad_result):
 
 #region PowerPoint exporter
 def generate_msms_figures(path, msms_dict, cid, oad, structure_info, graph, 
-    stamp):
+    stamp, each_bar, each_rep):
     #region base settings
     dpi_setting = 300
     fig_x, fig_y = 4.8, 2.4
@@ -3242,12 +4110,12 @@ def generate_msms_figures(path, msms_dict, cid, oad, structure_info, graph,
     tick_pad = 1
     #endregion
     #region Data structure
-    # oad_dict = {0:              {'Positions': '', 'N-discription': '', 'Score': float, 
+    # oad_dict = {0:              {'Positions': '', 'N-description': '', 'Score': float, 
     #                              'Ratio sum': float, 'Presence': float, 'Notice': '',
     #                              'Peaks dict': {'n-9/dis@n-8/+O/': [Ref m/z, Ref delta, Measured m/z, Measured ratio, ppm]}
     #                             },
     #             1:              {....},
-    #             Determined db:  {'Positions': '', 'N-discription': '', 'Score': float,
+    #             Determined db:  {'Positions': '', 'N-description': '', 'Score': float,
     #                              'Ratio sum': float, 'Presence': float, 'Notice': '',
     #                              'Measured peaks': [[Measured m/z, Measured ratio, ppm], [...]],
     #                              'Ref peaks': [[OAD type, Ref m/z, Ref NL, Ref ratio], [...]]
@@ -3255,7 +4123,9 @@ def generate_msms_figures(path, msms_dict, cid, oad, structure_info, graph,
     #             }
     # 'Peaks dict': {'n-9/dis@n-8/+O/': [Ref m/z, Ref delta, Measured m/z, Measured ratio, ppm]}
     #endregion
-    for idx, msms_df in msms_dict.items():
+    total = len(msms_dict)
+    for i, (idx, msms_df) in enumerate(msms_dict.items()):
+        start = time.time()
         #region Data Pre-processing
         lipid_info = structure_info[idx]
         cid_dict = cid[idx]
@@ -3297,64 +4167,46 @@ def generate_msms_figures(path, msms_dict, cid, oad, structure_info, graph,
         #endregion
         #region Detail setting
         positions_list = []
-        peaks_dict_1, peaks_dict_2, peaks_dict_3 = {}, {}, {}
+        # peaks_dict_1, peaks_dict_2, peaks_dict_3 = {}, {}, {}
         ref_mz_1, ref_ratio_1, ref_mz_2, ref_ratio_2, ref_mz_3, ref_ratio_3 \
         = [], [], [], [], [], []
-        measured_oad_ions_1, measured_oad_ions_2, measured_oad_ions_3 = [], [], []
-        oad04_ions_1, oad04_ions_2, oad04_ions_3 = [], [], []
-        oad10_ions_1, oad10_ions_2, oad10_ions_3 = [], [], []
+        # measured_oad_ions_1, measured_oad_ions_2, measured_oad_ions_3 = [], [], []
+        # oad04_ions_1, oad04_ions_2, oad04_ions_3 = [], [], []
+        # oad10_ions_1, oad10_ions_2, oad10_ions_3 = [], [], []
         is_this_plasmalogen = 'Plasm' in lipid_info['Ontology']
         # ref_precursor_mz = lipid_info['Ref precursor Mz']
         if dict_3:
             positions_list.append(dict_3[0]['Positions'])
-            peaks_dict_3 = dict_3[0]['Peaks dict']
+            # peaks_dict_3 = dict_3[0]['Peaks dict']
         elif dict_2:
             positions_list.append(dict_2[0]['Positions'])
-            peaks_dict_2 = dict_2[0]['Peaks dict']
+            # peaks_dict_2 = dict_2[0]['Peaks dict']
         elif dict_1:
             positions_list.append(dict_1[0]['Positions'])
-            peaks_dict_1 = dict_1[0]['Peaks dict']
+            # peaks_dict_1 = dict_1[0]['Peaks dict']
         if dict_3:
             ref_mz_3 = [li[1] for li in dict_3['Determined db']['Ref peaks']]
-            ref_ratio_3 = [li[3]*(-1) for li in dict_3['Determined db']['Ref peaks']]
-            measured_oad_ions_3 = [li[1] for li in dict_3['Determined db']['Measured peaks']]
-            oad04_ions_3 = [[li[1], li[3]] for li in dict_3['Determined db']['Ref peaks'] if 'OAD04' in li[0]]
-            oad10_ions_3 = [[li[1], li[3]] for li in dict_3['Determined db']['Ref peaks'] if 'OAD10' in li[0]]
+            ref_ratio_3 = [
+                li[3]*(-1) for li in dict_3['Determined db']['Ref peaks']]
+            # measured_oad_ions_3 = [li[1] for li in dict_3['Determined db']['Measured peaks']]
+            # oad04_ions_3 = [[li[1], li[3]] for li in dict_3['Determined db']['Ref peaks'] if 'OAD04' in li[0]]
+            # oad10_ions_3 = [[li[1], li[3]] for li in dict_3['Determined db']['Ref peaks'] if 'OAD10' in li[0]]
         if dict_2:
             ref_mz_2 = [li[1] for li in dict_2['Determined db']['Ref peaks']]
-            ref_ratio_2 = [li[3]*(-1) for li in dict_2['Determined db']['Ref peaks']]
-            measured_oad_ions_2 = [li[1] for li in dict_2['Determined db']['Measured peaks']]
-            oad04_ions_2 = [[li[1], li[3]] for li in dict_2['Determined db']['Ref peaks'] if 'OAD04' in li[0]]
-            oad10_ions_2 = [[li[1], li[3]] for li in dict_2['Determined db']['Ref peaks'] if 'OAD10' in li[0]]
+            ref_ratio_2 = [
+                li[3]*(-1) for li in dict_2['Determined db']['Ref peaks']]
+            # measured_oad_ions_2 = [li[1] for li in dict_2['Determined db']['Measured peaks']]
+            # oad04_ions_2 = [[li[1], li[3]] for li in dict_2['Determined db']['Ref peaks'] if 'OAD04' in li[0]]
+            # oad10_ions_2 = [[li[1], li[3]] for li in dict_2['Determined db']['Ref peaks'] if 'OAD10' in li[0]]
         if dict_1:
             ref_mz_1 = [li[1] for li in dict_1['Determined db']['Ref peaks']]
-            ref_ratio_1 = [li[3]*(-1) for li in dict_1['Determined db']['Ref peaks']]
-            measured_oad_ions_1 = [li[1] for li in dict_1['Determined db']['Measured peaks']]
-            oad04_ions_1 = [[li[1], li[3]] for li in dict_1['Determined db']['Ref peaks'] if 'OAD04' in li[0]]
-            oad10_ions_1 = [[li[1], li[3]] for li in dict_1['Determined db']['Ref peaks'] if 'OAD10' in li[0]]
-        # if lipid_info['MS2 Mz'] > 0:
-        #     precursor_mz = lipid_info['MS2 Mz']
-        # else:
-        #     precursor_mz = lipid_info['Precursor Mz']
+            ref_ratio_1 = [
+                li[3]*(-1) for li in dict_1['Determined db']['Ref peaks']]
+            # measured_oad_ions_1 = [li[1] for li in dict_1['Determined db']['Measured peaks']]
+            # oad04_ions_1 = [[li[1], li[3]] for li in dict_1['Determined db']['Ref peaks'] if 'OAD04' in li[0]]
+            # oad10_ions_1 = [[li[1], li[3]] for li in dict_1['Determined db']['Ref peaks'] if 'OAD10' in li[0]]
         #endregion
         #region Range setting
-        # max_position = 3
-        # for each_comb in positions_list:
-        #     current_max = max(each_comb)
-        #     if current_max > max_position:
-        #         max_position = current_max
-        # if is_this_plasmalogen:
-        #     cut_off_min = 265
-        # elif max_position <= 6:
-        #     cut_off_min = 100
-        # elif max_position <= 18:
-        #     cut_off_min = 100 + (max_position-6)*15
-        # else:
-        #     cut_off_min = 0
-        # min_mz = precursor_mz - cut_off_min
-        # x_max = math.ceil(precursor_mz/xtick_num)*xtick_num+5
-        # x_min = math.floor(min_mz/xtick_num)*xtick_num
-        # bar_width = math.floor(10*(x_max-x_min)/400)/10
         precursor_mz = graph_dict['MS2 Mz']
         ref_precursor_mz = graph_dict['Ref precursor Mz']
         x_min, x_max = graph_dict['x-range'][0], graph_dict['x-range'][1]
@@ -3363,17 +4215,6 @@ def generate_msms_figures(path, msms_dict, cid, oad, structure_info, graph,
         #endregion
         #region magnification setting
         final_magnification = graph_dict['Magnification']
-        # max_ratio_list = []
-        # final_magnification= 1
-        # max_criteria = 30
-        # if measured_oad_ions_3:
-        #     max_ratio_list.append(max(measured_oad_ions_3))
-        # if measured_oad_ions_2:
-        #     max_ratio_list.append(max(measured_oad_ions_2))
-        # if measured_oad_ions_1:
-        #     max_ratio_list.append(max(measured_oad_ions_1))
-        # if max_ratio_list:
-        #     final_magnification = math.floor(max_criteria/max(max_ratio_list))
         #endregion
         #region matplotlib base setting
         fig = Figure(figsize=(fig_x, fig_y), dpi=dpi_setting)
@@ -3389,12 +4230,11 @@ def generate_msms_figures(path, msms_dict, cid, oad, structure_info, graph,
         ax.tick_params(labelsize=small_font_size, width=tick_width, pad=tick_pad)
         ax.set_yticks([-100, -50, 0, 50, 100])
         ax.set_yticklabels(['100', '50', '0', '50', '100'])
-        # ax.spines['right'].set_visible(False)
-        # ax.spines['top'].set_visible(False)
         #endregion
         #region Plotting OAD-MS/MS
-        total_fig_x = msms_df['frag m/z'].values.tolist()
-        total_fig_y = msms_df['Ratio(%)'].values.tolist()
+        ex_msms = msms_df[msms_df['frag m/z'] >= x_min]
+        total_fig_x = ex_msms['frag m/z'].values.tolist()
+        total_fig_y = ex_msms['Ratio(%)'].values.tolist()
         total_fig_y = [v*final_magnification for v in total_fig_y]
         ref_ratio_1 = [v*final_magnification for v in ref_ratio_1]
         ref_ratio_2 = [v*final_magnification for v in ref_ratio_2]
@@ -3440,11 +4280,14 @@ def generate_msms_figures(path, msms_dict, cid, oad, structure_info, graph,
         if os.path.isdir(f'{path}/{stamp}_tempfiles'): pass
         else: os.mkdir(f'{path}/{stamp}_tempfiles')
         fig.savefig(save_path, dpi=dpi_setting)
+        each_rep.set(
+            f'Generating {i+1}/{total} >>> {time.time()-start:.3f} [sec]')
+        each_bar.step(1)
         fig.clear()
         # plt.close()
         #endregion
 
-def save_msms_fig_as_pptx(path, stamp, target_table):
+def save_msms_fig_as_pptx(path, stamp, target_table, each_bar, each_rep):
     tempfiles_path = f'{path}/{stamp}_tempfiles'
     ppt = pptx.Presentation()
     ppt_width = ppt.slide_width
@@ -3452,7 +4295,9 @@ def save_msms_fig_as_pptx(path, stamp, target_table):
     all_images = glob(f'{tempfiles_path}/*.png')
     blank_slide_layout = ppt.slide_layouts[6]
     txt_left = txt_top = txt_width = txt_height = Inches(1)*0.2
-    for each_images in all_images:
+    total = len(all_images)
+    for i, each_images in enumerate(all_images):
+        start = time.time()
         matched_id = re.search(r'ID\d+\.', each_images)
         extracted_id = int(matched_id.group().replace('ID','').replace('.',''))
         extracted_index = target_table[target_table['ID'] == extracted_id].index
@@ -3460,12 +4305,17 @@ def save_msms_fig_as_pptx(path, stamp, target_table):
         if oad_result_name == '':
             oad_result_name = target_table['Metabolite name'][extracted_index[0]]
         slide = ppt.slides.add_slide(blank_slide_layout)
-        pic = slide.shapes.add_picture(each_images, 0, 0, ppt_width, ppt_width*9/16)
+        pic = slide.shapes.add_picture(
+            each_images, 0, 0, ppt_width, ppt_width*9/16)
         pic.left = int((ppt_width - pic.width)/2)
         pic.top = int((ppt_height - pic.height)/2)
-        txt_box = slide.shapes.add_textbox(txt_left, txt_top, txt_width*30, txt_height*2)
+        txt_box = slide.shapes.add_textbox(
+            txt_left, txt_top, txt_width*30, txt_height*2)
         txt_frame = txt_box.text_frame
         txt_frame.text = 'ID' + str(extracted_id) + ' ' + oad_result_name
+        each_rep.set(
+            f'Exporting {i+1}/{total} >>> {time.time()-start:.3f} [sec]')
+        each_bar.step(1)
     pptx_path = f'{path}/{stamp}_MSRIDD_spectrum.pptx'
     ppt.save(pptx_path)
     shutil.rmtree(tempfiles_path)

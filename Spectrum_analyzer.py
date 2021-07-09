@@ -1,23 +1,10 @@
-import datetime
-from glob import glob
 import itertools
 import math
-# import numba
-import numpy as np
-import os
 import pandas as pd
 import pickle
 import re
 import pprint
-import statistics
 import time
-
-
-import openpyxl
-from openpyxl.styles import PatternFill, Font
-from openpyxl.utils.dataframe import dataframe_to_rows
-import pptx
-from pptx.util import Inches
 
 
 #region lipidomics infomartions
@@ -700,14 +687,14 @@ def math_floor(num, digit):
 #region Graph dict
 def set_oad_graph_dict_value(oad_dict, lipid_info):
     #region Data structure
-    # dict = {0:              {'Positions': '', 'N-discription': '', 'Score': float, 
+    # dict = {0:              {'Positions': '', 'N-description': '', 'Score': float, 
     #                          'Ratio sum': float, 'Presence': float, 'Notice': '',
     #                          'Measured peaks': [[Measured m/z, Measured ratio, ppm], [...]],
     #                          'Ref peaks': [[OAD type, Ref m/z, Ref NL, Ref ratio], [...]],
     #                          'Peaks dict': {'n-9/dis@n-8/+O/': [Ref m/z, Ref delta, Measured m/z, Measured ratio, ppm]}
     #                         },
     #         1:              {....},
-    #         Determined db:  {'Positions': '', 'N-discription': '', 'Score': float,
+    #         Determined db:  {'Positions': '', 'N-description': '', 'Score': float,
     #                          'Ratio sum': float, 'Presence': float, 'Notice': '',
     #                          'Measured peaks': [[Measured m/z, Measured ratio, ppm], [...]],
     #                          'Ref peaks': [[OAD type, Ref m/z, Ref NL, Ref ratio], [...]]
@@ -722,37 +709,54 @@ def set_oad_graph_dict_value(oad_dict, lipid_info):
     else: precursor_mz = lipid_info['Precursor Mz']
     ref_precursor_mz = lipid_info['Ref precursor Mz']
     ontology = lipid_info['Ontology']
+    exp_peaks = 'Measured peaks'
+    ref_peaks = 'Ref peaks'
     #region x-ragne
     measured_oad_ions_3, measured_oad_ions_2, measured_oad_ions_1 = [], [], []
-    min_mz = precursor_mz - 250
+    min_mzs = []
     if d_len == 4:
         for rank, d in oad_dict['Moiety-1'].items():
-            measured_oad_ions_1 = [li[1] for li in d['Measured peaks']]
-            ref_mz_1 = [li[1] for li in d['Ref peaks']]
-            min_mz = min(ref_mz_1)
+            if d['N-description'] == 'Unresolved':
+                continue
+            measured_oad_ions_1 = [li[1] for li in d[exp_peaks] if li[1] > 0]
+            ref_mz_1 = [li[1] for li in d[ref_peaks]]
+            min_mzs.append(min(ref_mz_1))
     if d_len == 5:
         for rank, d in oad_dict['Moiety-2'].items():
-            measured_oad_ions_2 = [li[1] for li in d['Measured peaks']]
-            ref_mz_2 = [li[1] for li in d['Ref peaks']]
-            min_mz = min(ref_mz_2)
+            if d['N-description'] == 'Unresolved':
+                continue
+            measured_oad_ions_2 = [li[1] for li in d[exp_peaks]]
+            ref_mz_2 = [li[1] for li in d[ref_peaks]]
+            min_mzs.append(min(ref_mz_2))
         for rank, d in oad_dict['Moiety-1'].items():
-            measured_oad_ions_1 = [li[1] for li in d['Measured peaks']]
-            ref_mz_1 = [li[1] for li in d['Ref peaks']]
-            min_mz = min(ref_mz_1) if min(ref_mz_1) < min_mz else min_mz
+            if d['N-description'] == 'Unresolved':
+                continue
+            measured_oad_ions_1 = [li[1] for li in d[exp_peaks]]
+            ref_mz_1 = [li[1] for li in d[ref_peaks]]
+            min_mzs.append(min(ref_mz_1))
     if d_len == 6:
         for rank, d in oad_dict['Moiety-3'].items():
-            measured_oad_ions_3 = [li[1] for li in d['Measured peaks']]
-            ref_mz_3 = [li[1] for li in d['Ref peaks']]
-            min_mz = min(ref_mz_3)
+            if d['N-description'] == 'Unresolved':
+                continue
+            measured_oad_ions_3 = [li[1] for li in d[exp_peaks]]
+            ref_mz_3 = [li[1] for li in d[ref_peaks]]
+            min_mzs.append(min(ref_mz_3))
         for rank, d in oad_dict['Moiety-2'].items():
-            ref_mz_2 = [li[1] for li in d['Ref peaks']]
-            measured_oad_ions_2 = [li[1] for li in d['Measured peaks']]
-            min_mz = min(ref_mz_2) if min(ref_mz_2) < min_mz else min_mz
+            if d['N-description'] == 'Unresolved':
+                continue
+            ref_mz_2 = [li[1] for li in d[ref_peaks]]
+            measured_oad_ions_2 = [li[1] for li in d[exp_peaks]]
+            min_mzs.append(min(ref_mz_2))
         for rank, d in oad_dict['Moiety-1'].items():
-            measured_oad_ions_1 = [li[1] for li in d['Measured peaks']]
-            ref_mz_1 = [li[1] for li in d['Ref peaks']]
-            min_mz = min(ref_mz_1) if min(ref_mz_1) < min_mz else min_mz
-    x_min = min_mz -50
+            if d['N-description'] == 'Unresolved':
+                continue
+            measured_oad_ions_1 = [li[1] for li in d[exp_peaks]]
+            ref_mz_1 = [li[1] for li in d[ref_peaks]]
+            min_mzs.append(min(ref_mz_1))
+    if min_mzs:
+        x_min = min(min_mzs) -50
+    else:
+        x_min = precursor_mz - 250
     x_max = math.ceil(precursor_mz/xtick_num)*xtick_num+5
     #endregion
     bar_width = math.floor(10*(x_max-x_min)/400)/10
@@ -765,6 +769,8 @@ def set_oad_graph_dict_value(oad_dict, lipid_info):
     if measured_oad_ions_1: max_ratio_list.append(max(measured_oad_ions_1))
     if max_ratio_list:
         final_magnification = math.floor(max_criteria/max(max_ratio_list))
+        if final_magnification > 500:
+            final_magnification = 500
     #endregion
     graph_dict['MS2 Mz'] = precursor_mz
     graph_dict['Ref precursor Mz'] = ref_precursor_mz
@@ -932,6 +938,13 @@ def determine_db_positions(unsaturated_moieties_num, structure_dict,
     ref_oad_dict = {}
     ref_oad_dict = generate_reference_oad_dict(structure_dict,
         unsaturated_moieties_num, msms_df, ms_tolerance, must_nl_cut_off_dict)
+    unresolved_d = {0: {'Positions': '', 'N-description': 'Unresolved',
+                        'Score': '###', 'Ratio sum': '###', 'Presence': '###',
+                        'Notice': 'Unresolved', 
+                        'Measured peaks': [[0, 0, 0]], 
+                        'Ref peaks': [['', 0, 0, 0]], 
+                        'Peaks dict': {'none': [0, 0, 0, 0, 0]}}
+                    }
     #endregion
 
     if unsaturated_moieties_num == 1:
@@ -967,13 +980,15 @@ def determine_db_positions(unsaturated_moieties_num, structure_dict,
         """ Sorting the result by MS/MS simularity """
         #region
         score_info_dict = score_thresholding(score_info_dict, score_cutoff)
+        unresolved_d_1 = unresolved_d.copy()
         if score_info_dict:
             sorted_dict = get_score_sorted_dict(score_info_dict)
+            sorted_dict[len(sorted_dict)] = unresolved_d_1[0]
             revolved_level = 'All'
             validated_num = 1
             bool_list = [True]
         else:
-            sorted_dict = {}
+            sorted_dict = unresolved_d_1
             revolved_level = 'None'
             validated_num = 0
             bool_list = [False]
@@ -1019,6 +1034,8 @@ def determine_db_positions(unsaturated_moieties_num, structure_dict,
             for_range=for_range_1, tolerance=ms_tolerance, 
             must_nl_cut_off_dict=must_nl_cut_off_dict, 
             structure_dict=structure_dict)
+        # if structure_dict['Precise precursor Mz'][1] == 564.5359:
+        #     pprint.pprint(diagnostic_ions_result_dict_1)
         # Acyl-2
         diagnostic_ions_result_dict_2 = {}
         for_range_2 = range(0, db_num_2)
@@ -1028,6 +1045,9 @@ def determine_db_positions(unsaturated_moieties_num, structure_dict,
             for_range=for_range_2, tolerance=ms_tolerance, 
             must_nl_cut_off_dict=must_nl_cut_off_dict, 
             structure_dict=structure_dict)
+        # if structure_dict['Precise precursor Mz'][1] == 564.5359:
+        #     pprint.pprint(diagnostic_ions_result_dict_2)
+        #     print()
         #endregion
         """ Calculating presence rate and ratio sum via reference """
         #region
@@ -1045,29 +1065,35 @@ def determine_db_positions(unsaturated_moieties_num, structure_dict,
         #region
         score_info_dict_1 = score_thresholding(score_info_dict_1, score_cutoff)
         score_info_dict_2 = score_thresholding(score_info_dict_2, score_cutoff)
+        unresolved_d_1 = unresolved_d.copy()
+        unresolved_d_2 = unresolved_d.copy()
         if score_info_dict_2 and score_info_dict_1:
             sorted_dict_2 = get_score_sorted_dict(score_info_dict_2)
             sorted_dict_1 = get_score_sorted_dict(score_info_dict_1)
             sorted_dict_1, sorted_dict_2 = check_same_dbs_position_in_two(
                 dict_1=sorted_dict_1, dict_2=sorted_dict_2, tag='2')
+            sorted_dict_2[len(sorted_dict_2)] = unresolved_d_2[0]
+            sorted_dict_1[len(sorted_dict_1)] = unresolved_d_1[0]
             revolved_level = 'All'
             validated_num = 2
             bool_list = [True, True]
         elif score_info_dict_2:
             sorted_dict_2 = get_score_sorted_dict(score_info_dict_2)
-            sorted_dict_1 = {}
+            sorted_dict_1 = unresolved_d_1
+            sorted_dict_2[len(sorted_dict_2)] = unresolved_d_2[0]
             revolved_level = 'Partial'
             validated_num = 1
             bool_list = [False, True]
         elif score_info_dict_1:
-            sorted_dict_2 = {}
+            sorted_dict_2 = unresolved_d_2
             sorted_dict_1 = get_score_sorted_dict(score_info_dict_1)
+            sorted_dict_1[len(sorted_dict_1)] = unresolved_d_1[0]
             revolved_level = 'Partial'
             validated_num = 1
             bool_list = [True, False]
         else:
-            sorted_dict_2 = {}
-            sorted_dict_1 = {}
+            sorted_dict_2 = unresolved_d_2
+            sorted_dict_1 = unresolved_d_1
             revolved_level = 'None'
             validated_num = 0
             bool_list = [False, False]
@@ -1143,73 +1169,84 @@ def determine_db_positions(unsaturated_moieties_num, structure_dict,
         score_info_dict_1 = score_thresholding(score_info_dict_1, score_cutoff)
         score_info_dict_2 = score_thresholding(score_info_dict_2, score_cutoff)
         score_info_dict_3 = score_thresholding(score_info_dict_3, score_cutoff)
+        unresolved_d_1 = unresolved_d.copy()
+        unresolved_d_2 = unresolved_d.copy()
+        unresolved_d_3 = unresolved_d.copy()
         if score_info_dict_1 and score_info_dict_2 and score_info_dict_3:
             sorted_dict_3 = get_score_sorted_dict(score_info_dict_3)
             sorted_dict_2 = get_score_sorted_dict(score_info_dict_2)
             sorted_dict_1 = get_score_sorted_dict(score_info_dict_1)
-
             sorted_dict_1, sorted_dict_2, sorted_dict_3 \
             = check_same_dbs_position_in_three(dict_1=sorted_dict_1, 
                                                dict_2=sorted_dict_2, 
                                                dict_3=sorted_dict_3)
+            sorted_dict_3[len(sorted_dict_3)] = unresolved_d_3[0]
+            sorted_dict_2[len(sorted_dict_2)] = unresolved_d_2[0]
+            sorted_dict_1[len(sorted_dict_1)] = unresolved_d_1[0]
             revolved_level = 'All'
             validated_num = 3
             bool_list = [True, True, True]
         elif score_info_dict_2 and score_info_dict_3:
             sorted_dict_3 = get_score_sorted_dict(score_info_dict_3)
             sorted_dict_2 = get_score_sorted_dict(score_info_dict_2)
-            sorted_dict_1 = {}
-
+            sorted_dict_1 = unresolved_d_1
             sorted_dict_2, sorted_dict_3 = check_same_dbs_position_in_two(
                 dict_1=sorted_dict_2, dict_2=sorted_dict_3, tag='3')
+            sorted_dict_3[len(sorted_dict_3)] = unresolved_d_3[0]
+            sorted_dict_2[len(sorted_dict_2)] = unresolved_d_2[0]
             revolved_level = 'Partial'
             validated_num = 2
             bool_list = [False, True, True]
         elif score_info_dict_1 and score_info_dict_3:
             sorted_dict_3 = get_score_sorted_dict(score_info_dict_3)
-            sorted_dict_2 = {}
+            sorted_dict_2 = unresolved_d_2
             sorted_dict_1 = get_score_sorted_dict(score_info_dict_1)
-
             sorted_dict_1, sorted_dict_3 = check_same_dbs_position_in_two(
                 dict_1=sorted_dict_1, dict_2=sorted_dict_3, tag='3')
+            sorted_dict_3[len(sorted_dict_3)] = unresolved_d_3[0]
+            sorted_dict_1[len(sorted_dict_1)] = unresolved_d_1[0]
             bool_list = [True, False, True]
             revolved_level = 'Partial'
             validated_num = 2
         elif score_info_dict_1 and score_info_dict_2:
-            sorted_dict_3 = {}
+            sorted_dict_3 = unresolved_d_3
             sorted_dict_2 = get_score_sorted_dict(score_info_dict_2)
             sorted_dict_1 = get_score_sorted_dict(score_info_dict_1)
-
             sorted_dict_1, sorted_dict_2 = check_same_dbs_position_in_two(
                 dict_1=sorted_dict_1, dict_2=sorted_dict_2, tag='2')
+            sorted_dict_2[len(sorted_dict_2)] = unresolved_d_2[0]
+            sorted_dict_1[len(sorted_dict_1)] = unresolved_d_1[0]
             bool_list = [True, True, False]
             revolved_level = 'Partial'
             validated_num = 2
         elif score_info_dict_3:
             sorted_dict_3 = get_score_sorted_dict(score_info_dict_3)
-            sorted_dict_2 = {}
-            sorted_dict_1 = {}
+            sorted_dict_3[len(sorted_dict_3)] = unresolved_d_3[0]
+            sorted_dict_2 = unresolved_d_2
+            sorted_dict_1 = unresolved_d_1
             bool_list = [False, False, True]
             revolved_level = 'Partial'
             validated_num = 1
         elif score_info_dict_2:
-            sorted_dict_3 = {}
+            sorted_dict_3 = unresolved_d_3
             sorted_dict_2 = get_score_sorted_dict(score_info_dict_2)
-            sorted_dict_1 = {}
+            sorted_dict_2[len(sorted_dict_2)] = unresolved_d_2[0]
+            sorted_dict_1 = unresolved_d_1
             bool_list = [False, True, False]
             revolved_level = 'Partial'
             validated_num = 1
         elif score_info_dict_1:
-            sorted_dict_3 = {}
-            sorted_dict_2 = {}
+            sorted_dict_3 = unresolved_d_3
+            sorted_dict_2 = unresolved_d_2
             sorted_dict_1 = get_score_sorted_dict(score_info_dict_1)
+            sorted_dict_1[len(sorted_dict_1)] = unresolved_d_1[0]
             bool_list = [True, False, False]
             revolved_level = 'Partial'
             validated_num = 1
         else:
-            sorted_dict_3 = {}
-            sorted_dict_2 = {}
-            sorted_dict_1 = {}
+            sorted_dict_3 = unresolved_d_3
+            sorted_dict_2 = unresolved_d_2
+            sorted_dict_1 = unresolved_d_1
             bool_list = [False, False, False]
             revolved_level = 'None'
             validated_num = 0
@@ -1414,8 +1451,8 @@ def calculate_db_pairs(chain_num, db_num, structure_dict, msms_df,
         for pos, nl in essential_nl_dict_head.items(): # 1st C=C
             head_mz = ref_mz - nl - ms_tolerance
             tail_mz = ref_mz - nl + ms_tolerance
-            head_H2O_mz = ref_mz - nl - ms_tolerance + h2o_ms
-            tail_H2O_mz = ref_mz - nl + ms_tolerance + h2o_ms
+            head_H2O_mz = ref_mz - nl - ms_tolerance - h2o_ms
+            tail_H2O_mz = ref_mz - nl + ms_tolerance - h2o_ms
             extracted_df = cut_off_df[(cut_off_df['frag m/z'] >= head_mz)
                                      &(cut_off_df['frag m/z'] <= tail_mz)]
             extracted_H2O_df = cut_off_df[(cut_off_df['frag m/z'] >= head_H2O_mz)
@@ -1428,8 +1465,8 @@ def calculate_db_pairs(chain_num, db_num, structure_dict, msms_df,
             for pos, nl in essential_nl_dict_tail.items():
                 head_mz = ref_mz - nl - ms_tolerance
                 tail_mz = ref_mz - nl + ms_tolerance
-                head_H2O_mz = ref_mz - nl - ms_tolerance + h2o_ms
-                tail_H2O_mz = ref_mz - nl + ms_tolerance + h2o_ms
+                head_H2O_mz = ref_mz - nl - ms_tolerance - h2o_ms
+                tail_H2O_mz = ref_mz - nl + ms_tolerance - h2o_ms
                 extracted_df = cut_off_df[(cut_off_df['frag m/z'] >= head_mz)
                                          &(cut_off_df['frag m/z'] <= tail_mz)]
                 extracted_H2O_df = cut_off_df[(cut_off_df['frag m/z'] >= head_H2O_mz)
@@ -1735,8 +1772,10 @@ def query_essential_diagnostic_ions(df, ref_oad_dict, db_in_sphingobase,
     if ontology not in lipidclass_dict['Sphingolipids']:
         for pos, tag_and_nl in ref_oad_dict.items():
             each_pos_bool = []
-            tags_of_dgn_1 = [f'n-{each}/dis@n-{each-1}/+O-H/OAD03' for each in pos]
-            tags_of_dgn_2 = [f'n-{each}/dis@n-{each+1}/-H/OAD16' for each in pos]
+            tags_of_dgn_1 \
+            = [f'n-{each}/dis@n-{each-1}/+O-H/OAD03' for each in pos]
+            tags_of_dgn_2 \
+            = [f'n-{each}/dis@n-{each+1}/-H/OAD16' for each in pos]
             dgn_1_nls = [tag_and_nl[tag] for tag in tags_of_dgn_1]
             dgn_2_nls = [tag_and_nl[tag] for tag in tags_of_dgn_2]
             head_dgn_1_mzs = [ref_mz - nl - tol for nl in dgn_1_nls]
@@ -1764,10 +1803,14 @@ def query_essential_diagnostic_ions(df, ref_oad_dict, db_in_sphingobase,
             last_loop = db_num -1
             for pos, tag_and_nl in ref_oad_dict.items():
                 each_pos_bool = []
-                tags_of_dgn_1 = [f'n-{each}/dis@n-{each-1}/+O-H/OAD03' for each in pos]
-                tags_of_dgn_2 = [f'n-{each}/dis@n-{each+1}/-H/OAD16' for each in pos]
-                tags_of_dgn_3 = [f'n-{each}/dis@n-{each-1}/+O-H-H2O/OAD07' for each in pos]
-                tags_of_dgn_4 = [f'n-{each}/dis@n-{each+1}/-H-H2O/OAD19' for each in pos]
+                tags_of_dgn_1 \
+                = [f'n-{each}/dis@n-{each-1}/+O-H/OAD03' for each in pos]
+                tags_of_dgn_2 \
+                = [f'n-{each}/dis@n-{each+1}/-H/OAD16' for each in pos]
+                tags_of_dgn_3 \
+                = [f'n-{each}/dis@n-{each-1}/+O-H-H2O/OAD07' for each in pos]
+                tags_of_dgn_4 \
+                = [f'n-{each}/dis@n-{each+1}/-H-H2O/OAD19' for each in pos]
                 dgn_1_nls = [tag_and_nl[tag] for tag in tags_of_dgn_1]
                 dgn_2_nls = [tag_and_nl[tag] for tag in tags_of_dgn_2]
                 dgn_3_nls = [tag_and_nl[tag] for tag in tags_of_dgn_3]
@@ -1827,10 +1870,14 @@ def query_essential_diagnostic_ions(df, ref_oad_dict, db_in_sphingobase,
                         t_post_L2H_mz = ref_mz - tag_and_nl[post_L2H_nl] + tol
                         h_post_H2O_mz = ref_mz - tag_and_nl[post_H2O_nl] - tol
                         t_post_H2O_mz = ref_mz - tag_and_nl[post_H2O_nl] + tol
-                        h_post_LH_H2O_mz = ref_mz - tag_and_nl[post_LH_H2O_nl] - tol
-                        t_post_LH_H2O_mz = ref_mz - tag_and_nl[post_LH_H2O_nl] + tol
-                        h_post_L2H_H2O_mz = ref_mz - tag_and_nl[post_L2H_H2O_nl] - tol
-                        t_post_L2H_H2O_mz = ref_mz - tag_and_nl[post_L2H_H2O_nl] + tol
+                        h_post_LH_H2O_mz \
+                        = ref_mz - tag_and_nl[post_LH_H2O_nl] - tol
+                        t_post_LH_H2O_mz \
+                        = ref_mz - tag_and_nl[post_LH_H2O_nl] + tol
+                        h_post_L2H_H2O_mz \
+                        = ref_mz - tag_and_nl[post_L2H_H2O_nl] - tol
+                        t_post_L2H_H2O_mz \
+                        = ref_mz - tag_and_nl[post_L2H_H2O_nl] + tol
                         #endregion
                         post_bool = any((sph_df[frag] > h_post_mz)
                                        &(sph_df[frag] < t_post_mz))
@@ -1918,7 +1965,7 @@ def calc_presence_ratios_and_score(ref_oad_dict, diagnostic_ions_result_dict,
         if all(diagnostic_ions_result_dict[positions]):
             presence_counter, ratio_sum = 0, 0
             next_to_3oh = sph_set[0] and ((sph_set[1]-positions[-1]) == 4)
-            each_score_d = {'Positions': '', 'N-discription': '',
+            each_score_d = {'Positions': '', 'N-description': '',
                             'Score': 0, 'Ratio sum': 0, 'Presence': 0,
                             'Notice': '', 'Measured peaks': [],
                             'Ref peaks': [], 'Peaks dict': {}}
@@ -1972,7 +2019,7 @@ def calc_presence_ratios_and_score(ref_oad_dict, diagnostic_ions_result_dict,
                 if v[2] > 0: #[Measured m/z, Measured ratio, ppm]
                     measured_peaks.append([v[2], v[3], v[4]])
             each_score_d['Positions'] = positions
-            each_score_d['N-discription'] = get_n_discription(str(positions))
+            each_score_d['N-description'] = get_n_discription(str(positions))
             each_score_d['Measured peaks'] = measured_peaks
             each_score_d['Ref peaks'] = ref_peaks
             each_score_d['Peaks dict'] = peaks_dict
@@ -2362,7 +2409,7 @@ def add_determined_db_info(oad_dict):
     #     if v[2] > 0: #[Measured m/z, Measured ratio, ppm]
     #         measured_peaks.append([v[2], v[3], v[4]])
     # oad_dict['Determined db'] = {'Positions': oad_dict[0]['Positions'],
-    #                              'N-discription': oad_dict[0]['N-discription'],
+    #                              'N-description': oad_dict[0]['N-description'],
     #                              'Score': oad_dict[0]['Score'],
     #                              'Ratio sum': oad_dict[0]['Ratio sum'],
     #                              'Presence': oad_dict[0]['Presence'],
@@ -2390,7 +2437,8 @@ def determine_oad_metabolite_name_N_description(oad_result_dict, structure_dict,
         refined_str = refined_str.replace(' ', '')
         return refined_str
     if unsaturated_moieties_num == 1:
-        db_positions = str(oad_result_dict['Moiety-1']['Determined db']['Positions'])
+        db_positions = str(
+            oad_result_dict['Moiety-1']['Determined db']['Positions'])
         db_positions = refine_db_position_str(db_positions)
         if len(moieties) == 2:
             target_str = str(moieties['chain-1']) + ':' + str(moieties['db-1'])
@@ -2463,6 +2511,7 @@ def determine_oad_metabolite_name_N_description(oad_result_dict, structure_dict,
         rep_name = rep_name.replace(target_str_2, 'target2', 1)
         rep_name = rep_name.replace(target_str_3, 'target3', 1)
         oad_name = rep_name.replace('target1', db_sol_1).replace('target2', db_sol_2).replace('target3', db_sol_3)
+    oad_name = oad_name.replace('(n-)', '')
     return oad_name
 
 def get_oad_similarity_score(act_presence_rate, act_ratio_sum):
