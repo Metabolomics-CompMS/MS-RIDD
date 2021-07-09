@@ -1,12 +1,4 @@
-from glob import glob
-import itertools
 import math
-import numpy as np
-import os
-import pandas as pd
-import pickle
-import re
-import statistics
 
 
 #region global vars
@@ -342,7 +334,7 @@ def calc_presence_ratios_and_score(ref_oad_dict, cut_df, ref_precursor_mz,
     for positions, tag_and_nl in ref_oad_dict.items():
         presence_counter, ratio_sum = 0, 0
         next_to_3oh = sph_set[0] and ((sph_set[1]-positions[-1]) == 4)
-        each_score_d = {'Positions': '', 'N-discription': '',
+        each_score_d = {'Positions': '', 'N-description': '',
                         'Score': 0, 'Ratio sum': 0, 'Presence': 0,
                         'Notice': 'ReAnalysis', 'Measured peaks': [],
                         'Ref peaks': [], 'Peaks dict': {}}
@@ -396,7 +388,7 @@ def calc_presence_ratios_and_score(ref_oad_dict, cut_df, ref_precursor_mz,
             if v[2] > 0: #[Measured m/z, Measured ratio, ppm]
                 measured_peaks.append([v[2], v[3], v[4]])
         each_score_d['Positions'] = positions
-        each_score_d['N-discription'] = get_n_discription(str(positions))
+        each_score_d['N-description'] = get_n_discription(str(positions))
         each_score_d['Measured peaks'] = measured_peaks
         each_score_d['Ref peaks'] = ref_peaks
         each_score_d['Peaks dict'] = peaks_dict
@@ -502,8 +494,103 @@ def calc_similarity_score(acts, refs):
     score = sim(acts, refs)*1000
     return score
 
-
-
+def set_oad_graph_dict_value(oad_dict, lipid_info, auto_magnification):
+    #region Data structure
+    # dict = {0:              {'Positions': '', 'N-description': '', 'Score': float, 
+    #                          'Ratio sum': float, 'Presence': float, 'Notice': '',
+    #                          'Measured peaks': [[Measured m/z, Measured ratio, ppm], [...]],
+    #                          'Ref peaks': [[OAD type, Ref m/z, Ref NL, Ref ratio], [...]],
+    #                          'Peaks dict': {'n-9/dis@n-8/+O/': [Ref m/z, Ref delta, Measured m/z, Measured ratio, ppm]}
+    #                         },
+    #         1:              {....},
+    #         Determined db:  {'Positions': '', 'N-description': '', 'Score': float,
+    #                          'Ratio sum': float, 'Presence': float, 'Notice': '',
+    #                          'Measured peaks': [[Measured m/z, Measured ratio, ppm], [...]],
+    #                          'Ref peaks': [[OAD type, Ref m/z, Ref NL, Ref ratio], [...]]
+    #                         }
+    #         }
+    #endregion
+    graph_dict = {'MS2 Mz': 0, 'Ref precursor Mz': 0, 'Ontology': '', 
+                  'x-range': [], 'Magnification': 1, 'Bar_width': 1}
+    d_len = len(oad_dict)
+    xtick_num = 10
+    if lipid_info['MS2 Mz'] > 0: precursor_mz = lipid_info['MS2 Mz']
+    else: precursor_mz = lipid_info['Precursor Mz']
+    ref_precursor_mz = lipid_info['Ref precursor Mz']
+    ontology = lipid_info['Ontology']
+    exp_peaks = 'Measured peaks'
+    ref_peaks = 'Ref peaks'
+    #region x-ragne
+    measured_oad_ions_3, measured_oad_ions_2, measured_oad_ions_1 = [], [], []
+    min_mzs = []
+    if d_len == 4:
+        for rank, d in oad_dict['Moiety-1'].items():
+            if d['N-description'] == 'Unresolved':
+                continue
+            measured_oad_ions_1 = [li[1] for li in d[exp_peaks]]
+            ref_mz_1 = [li[1] for li in d[ref_peaks]]
+            min_mzs.append(min(ref_mz_1))
+    if d_len == 5:
+        for rank, d in oad_dict['Moiety-2'].items():
+            if d['N-description'] == 'Unresolved':
+                continue
+            measured_oad_ions_2 = [li[1] for li in d[exp_peaks]]
+            ref_mz_2 = [li[1] for li in d[ref_peaks]]
+            min_mzs.append(min(ref_mz_2))
+        for rank, d in oad_dict['Moiety-1'].items():
+            if d['N-description'] == 'Unresolved':
+                continue
+            measured_oad_ions_1 = [li[1] for li in d[exp_peaks]]
+            ref_mz_1 = [li[1] for li in d[ref_peaks]]
+            min_mzs.append(min(ref_mz_1))
+    if d_len == 6:
+        for rank, d in oad_dict['Moiety-3'].items():
+            if d['N-description'] == 'Unresolved':
+                continue
+            measured_oad_ions_3 = [li[1] for li in d[exp_peaks]]
+            ref_mz_3 = [li[1] for li in d[ref_peaks]]
+            min_mzs.append(min(ref_mz_3))
+        for rank, d in oad_dict['Moiety-2'].items():
+            if d['N-description'] == 'Unresolved':
+                continue
+            ref_mz_2 = [li[1] for li in d[ref_peaks]]
+            measured_oad_ions_2 = [li[1] for li in d[exp_peaks]]
+            min_mzs.append(min(ref_mz_2))
+        for rank, d in oad_dict['Moiety-1'].items():
+            if d['N-description'] == 'Unresolved':
+                continue
+            measured_oad_ions_1 = [li[1] for li in d[exp_peaks]]
+            ref_mz_1 = [li[1] for li in d[ref_peaks]]
+            min_mzs.append(min(ref_mz_1))
+    if min_mzs:
+        x_min = min(min_mzs) -50
+    else:
+        x_min = precursor_mz - 250
+    x_max = math.ceil(precursor_mz/xtick_num)*xtick_num+5
+    #endregion
+    bar_width = math.floor(10*(x_max-x_min)/400)/10
+    #region Magnification
+    max_ratio_list = []
+    max_criteria = 30
+    if measured_oad_ions_3: max_ratio_list.append(max(measured_oad_ions_3))
+    if measured_oad_ions_2: max_ratio_list.append(max(measured_oad_ions_2))
+    if measured_oad_ions_1: max_ratio_list.append(max(measured_oad_ions_1))
+    if auto_magnification == 10:
+        if max_ratio_list:
+            final_magnification = math.floor(max_criteria/max(max_ratio_list))
+            if final_magnification > 500:
+                final_magnification = 500
+        else:
+            final_magnification = 30
+    else:
+        final_magnification = auto_magnification
+    #endregion
+    graph_dict['MS2 Mz'] = precursor_mz
+    graph_dict['Ref precursor Mz'] = ref_precursor_mz
+    graph_dict['Ontology'], graph_dict['x-range'] = ontology, [x_min, x_max]
+    graph_dict['Magnification'] = final_magnification
+    graph_dict['Bar_width'] = bar_width
+    return graph_dict
 
 
 #region Utilities
