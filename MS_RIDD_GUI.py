@@ -54,6 +54,8 @@ class MSRIDD_GUI(tk.Frame):
             background=self.fixed_map('background', style))
         self.create_main_widgets()
         self.disable_widgets()
+        self.data_exist = False
+        self.master.protocol('WM_DELETE_WINDOW', lambda : self.quit_software())
 
     def fixed_map(self, option, style):
         """ Fix for setting text colour for Tkinter 8.6.9
@@ -69,8 +71,6 @@ class MSRIDD_GUI(tk.Frame):
         self.menubar = tk.Menu(self.master)
         self.filemenu = tk.Menu(self.menubar, tearoff=0)
         self.newprjmenu = tk.Menu(self.filemenu, tearoff=0)
-        # self.filemenu.add_command(
-        #     label='New project', command=self.create_setting_window)
         self.newprjmenu.add_command(
             label='Batch analysis', command=self.create_batch_setwin)
         self.newprjmenu.add_command(
@@ -80,6 +80,8 @@ class MSRIDD_GUI(tk.Frame):
             label='Open project', command=self.import_project_files)
         self.filemenu.add_command(
             label='Save', command=self.start_saving)
+        self.filemenu.add_command(
+            label='Quit', command=self.quit_software)
         self.menubar.add_cascade(label='File', menu=self.filemenu)
         self.datamenu = tk.Menu(self.menubar, tearoff=0)
         self.datamenu.add_command(
@@ -429,6 +431,7 @@ class MSRIDD_GUI(tk.Frame):
             self.cid_result_dict = spectrum_analyzer.cid_result_dict
             self.oad_result_dict = spectrum_analyzer.oad_result_dict
             self.graph_dict = spectrum_analyzer.graph_dict
+            self.data_exist = True
             # updating main window
             self.master.title(f"MS-RIDD | {user_def_path}")
             self.set_analysis_result_into_table()
@@ -582,6 +585,7 @@ class MSRIDD_GUI(tk.Frame):
             self.cid_result_dict = spectrum_analyzer.cid_result_dict
             self.oad_result_dict = spectrum_analyzer.oad_result_dict
             self.graph_dict = spectrum_analyzer.graph_dict
+            self.data_exist = True
             # updating main window
             self.master.title(f"MS-RIDD | {user_def_path}")
             self.set_analysis_result_into_table()
@@ -654,6 +658,7 @@ class MSRIDD_GUI(tk.Frame):
         self.must_nl_cut_off_dict = {'diagnostic_1': ['OAD03', 0.01], 
                                      'diagnostic_2': ['OAD16', 0.01], 
                                      'sphingobase': 0.005}
+        self.data_exist = True
         self.set_analysis_result_into_table()
         self.data_setting(event=None, is_first=True)
         self.activate_widgets()
@@ -696,6 +701,25 @@ class MSRIDD_GUI(tk.Frame):
         self.temp_popup = PopUpWindow(master=self.master,
             title='Saving files', message='Saving files ...')
     #endregion
+
+    #region Close window
+    def quit_software(self):
+        if self.data_exist:
+            reply = messagebox.askyesno('Question', 
+                ('Before closing the software, you need file saving.\n'
+                +'Save the project file?'))
+            if reply:
+                self.temp_popup = PopUpWindow(master=self.master,
+                    title='Saving files', message='Saving files ...')
+                time.sleep(1)
+                self.save_analysis_files()
+                time.sleep(2)
+                self.temp_popup.close_window()
+                self.close_window(self.master)
+            else:
+                self.close_window(self.master)
+        else:
+            self.close_window(self.master)
 
     #region Data preparation
     def merge_bipolarity_cid(self):
