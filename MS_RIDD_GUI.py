@@ -35,7 +35,7 @@ import ReAnalyzer
 from Spectrum_analyzer import SingleAnalyzer
 from Spectrum_analyzer import BatchAnalyzer
 
-IconPath = 'image/OAD_Analyzer_icon_ver2.png'
+IconPath = 'image/MSRIDD_ICON.png'
 
 class MSRIDD_GUI(tk.Frame):
     def __init__(self, master):
