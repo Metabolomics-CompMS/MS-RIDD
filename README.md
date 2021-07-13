@@ -23,7 +23,7 @@ To prepare a text library, please see the tutorial of MS-DIAL: https://mtbinfo-t
 5. Click start button
 
 ### Batch analysis
-For a batch analysis. you need (a. Alignment result data (.txt) (b. PeakID data (.txt), (c. Peak list data (.txt) per samples.
+For a batch analysis. you need (a. Alignment result data, (b. PeakID data, (c. Peak list data of each sample.
 All data can be exported from MS-DIAL.
 
 1. Select "File > New project > Batch analysis"
@@ -38,7 +38,6 @@ All data can be exported from MS-DIAL.
 After a data analysis, MS-RIDD generates several data files 
 namely "analysis_table.pkl", "cid_result.pickle", "extracted_msms.pickle", "graph_info.pickle", "oad_result.pickle", and "structure_info.pickle".  
 All these files should be in a same directory to open a MS-RIDD project again.
-
 ***
 
 ## Developers
