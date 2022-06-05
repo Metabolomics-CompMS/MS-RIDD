@@ -3,7 +3,7 @@
 </div>
 
 # MS-RIDD: Mass Spectrometry Radical Induced Dissociation Decipherer - A software for tandem mass spectra analysis of radical induced dissociation
-The current program supports tandem MS/MS spectra analysis for oxygen attachment dissociation (OAD), which is one of the radical induced dissociation. The assembly is licensed under the CC-BY 4.0. Please contact Haruki Uchino (haruki-uchino@keio.jp) for feedback, bug reports, and questions.
+The current program supports tandem MS/MS spectra analysis for oxygen attachment dissociation (OAD), which is one of the radical induced dissociation. The assembly is licensed under the CC-BY 4.0. Please send feedback, bug reports, and questions to Issues page.
 ***
 
 ## Requirements
