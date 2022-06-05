@@ -404,9 +404,13 @@ class MSRIDD_GUI(tk.Frame):
             self.batch_setwin.entries['Files'], 
             self.batch_setwin.entries['Paths'])}
         self.ms_tolerance_ppm = 15
-        self.must_nl_cut_off_dict = {'diagnostic_1': ['OAD03', 0.01], 
-                                     'diagnostic_2': ['OAD16', 0.01], 
-                                     'sphingobase': 0.005}
+        essential_ion1 =  self.batch_setwin.essential_1.get()
+        essential_ion2 =  self.batch_setwin.essential_2.get()
+        self.must_nl_cut_off_dict = {
+            'diagnostic_1': [essential_ion1, 0.01], 
+            'diagnostic_2': [essential_ion2, 0.01], 
+            'sphingobase': 0.005
+        }
         cut_off_ratio = 0
         while not self.analysis_start:
             time.sleep(0.1)
@@ -455,49 +459,86 @@ class MSRIDD_GUI(tk.Frame):
     def create_setting_window(self):
         self.setting_window = tk.Toplevel(self.master)
         self.setting_window.attributes('-topmost', False)
-        self.center_position(self.setting_window, width=690, height=190)
+        self.center_position(self.setting_window, width=690, height=220)
         self.setting_window.resizable(width=False, height=False)
         self.setting_window.title("Start up a project")
         self.setting_window.grab_set()
         self.setting_window.iconphoto(False, tk.PhotoImage(file=IconPath))
         self.create_setting_widgets()
         self.setting_window.protocol(
-            'WM_DELETE_WINDOW', lambda : self.close_window(self.setting_window))
+            'WM_DELETE_WINDOW', lambda : self.close_window(self.setting_window)
+        )
 
     def create_setting_widgets(self):
         # Project path
-        prj_entry_label = ttk.Label(self.setting_window, text="Project file path :")
+        prj_entry_label = ttk.Label(
+            self.setting_window, text="Project file path :")
         prj_entry_label.place(x=30, y=30)
         self.prj_path = tk.StringVar()
-        self.prj_path_entry = ttk.Entry(self.setting_window, textvariable=self.prj_path, width=68)
+        self.prj_path_entry = ttk.Entry(
+            self.setting_window, textvariable=self.prj_path, width=68
+        )
         self.prj_path_entry.place(x=150, y=30)
-        self.prj_path_btn = ttk.Button(self.setting_window, text="Browse", command=self.get_filepath)
+        self.prj_path_btn = ttk.Button(
+            self.setting_window, text="Browse", command=self.get_filepath
+        )
         self.prj_path_btn.place(x=580, y=28)
         # Input data path
         inputdata_label = ttk.Label(self.setting_window, text="Input data path :")
         inputdata_label.place(x=30, y=80)
         self.inputdata_path = tk.StringVar()
-        self.inputdata_entry = ttk.Entry(self.setting_window, textvariable=self.inputdata_path, width=68)
+        self.inputdata_entry = ttk.Entry(
+            self.setting_window, textvariable=self.inputdata_path, width=68
+        )
         self.inputdata_entry.place(x=150, y=80)
-        self.inputdata_btn = ttk.Button(self.setting_window, text="Browse", command=self.get_inputdata_path)
+        self.inputdata_btn = ttk.Button(
+            self.setting_window, text="Browse", command=self.get_inputdata_path
+        )
         self.inputdata_btn.place(x=580, y=78)
         # Data format
         dataformat_label = ttk.Label(self.setting_window, text="Data format :")
         dataformat_label.place(x=30, y=130)
         self.radio_btn_value = tk.StringVar()
         self.radio_btn_value.set("")
-        self.radio_btn1 = ttk.Radiobutton(self.setting_window, text="PeakList", value="PeakList", variable=self.radio_btn_value)
-        self.radio_btn2 = ttk.Radiobutton(self.setting_window, text="Alignment", value="Alignment", variable=self.radio_btn_value)
-        # self.radio_btn3 = ttk.Radiobutton(self.setting_window, text="Merged text", value="Merged text", variable=self.radio_btn_value)
+        self.radio_btn1 = ttk.Radiobutton(
+            self.setting_window, text="PeakList", value="PeakList", 
+            variable=self.radio_btn_value
+        )
+        self.radio_btn2 = ttk.Radiobutton(
+            self.setting_window, text="Alignment", value="Alignment", 
+            variable=self.radio_btn_value
+        )
         self.radio_btn1.place(x=150, y=130)
         self.radio_btn2.place(x=250, y=130)
-        # self.radio_btn3.place(x=350, y=130)
+        # Essential ions
+        essential_label = ttk.Label(self.setting_window, text="Essential ions:")
+        essential_label.place(x=30, y=170)
+        self.essential_1 = tk.StringVar()
+        self.essential_1.set("OAD03")
+        self.combobox1 = ttk.Combobox(
+            self.setting_window, height=2, width=8, 
+            justify='center', state='readonly',
+            values=['OAD02', 'OAD03'], textvariable=self.essential_1
+        )
+        self.essential_2 = tk.StringVar()
+        self.essential_2.set("OAD16")
+        self.combobox2 = ttk.Combobox(
+            self.setting_window, height=2, width=8, 
+            justify='center', state='readonly',
+            values=['OAD15', 'OAD16'], textvariable=self.essential_2
+        )
+        self.combobox1.place(x=150, y=170)
+        self.combobox2.place(x=250, y=170)
         # Clear button
-        self.clear_btn = ttk.Button(self.setting_window, text="Clear", command=self.clear_button)
-        self.clear_btn.place(x=489, y=128)
+        self.clear_btn = ttk.Button(
+            self.setting_window, text="Clear", command=self.clear_button
+        )
+        self.clear_btn.place(x=489, y=168)
         # Finish button
-        self.finish_btn = ttk.Button(self.setting_window, text="Start", command=self.check_parameters)
-        self.finish_btn.place(x=580, y=128) 
+        self.finish_btn = ttk.Button(
+            self.setting_window, text="Start", command=self.check_parameters
+        )
+        self.finish_btn.place(x=580, y=168) 
 
     def get_filepath(self):
         old_path = self.prj_path_entry.get()
@@ -561,9 +602,13 @@ class MSRIDD_GUI(tk.Frame):
         inputdata_path = self.inputdata_entry.get()
         self. normalized_data = False
         self.ms_tolerance_ppm = 15
-        self.must_nl_cut_off_dict = {'diagnostic_1': ['OAD03', 0.01], 
-                                     'diagnostic_2': ['OAD16', 0.01], 
-                                     'sphingobase': 0.005}
+        essential_ion1 =  self.essential_1.get()
+        essential_ion2 =  self.essential_2.get()
+        self.must_nl_cut_off_dict = {
+            'diagnostic_1': [essential_ion1, 0.01], 
+            'diagnostic_2': [essential_ion2, 0.01], 
+            'sphingobase': 0.005
+        }
         cut_off_ratio = 0
         while not self.analysis_start: time.sleep(0.1)
         self.setting_window.destroy()
@@ -2879,8 +2924,28 @@ class BatchSettingWindow(object):
         self.normalized_data.set(True)
         self.normalized_check = ttk.Checkbutton(
             self.batch_setwin, text="Check if the alignment data are normalized", 
-            variable=self.normalized_data)
+            variable=self.normalized_data
+        )
         self.normalized_check.place(x=30, y=270)
+        # Essential ions
+        essential_label = ttk.Label(self.batch_setwin, text="Essential ions:")
+        essential_label.place(x=30, y=310)
+        self.essential_1 = tk.StringVar()
+        self.essential_1.set("OAD03")
+        self.combobox1 = ttk.Combobox(
+            self.batch_setwin, height=2, width=8, 
+            justify='center', state='readonly',
+            values=['OAD02', 'OAD03'], textvariable=self.essential_1
+        )
+        self.essential_2 = tk.StringVar()
+        self.essential_2.set("OAD16")
+        self.combobox2 = ttk.Combobox(
+            self.batch_setwin, height=2, width=8, 
+            justify='center', state='readonly',
+            values=['OAD15', 'OAD16'], textvariable=self.essential_2
+        )
+        self.combobox1.place(x=150, y=310)
+        self.combobox2.place(x=250, y=310)
         # Clear button
         self.clear_btn = ttk.Button(self.batch_setwin, text="Clear", 
             command=self.clear_button)
@@ -3105,7 +3170,7 @@ class TwoPathImporter(object):
         self.two_path_imp_win.destroy()
         try:
             if self.title == "Merge Neg&Pos CID-MS/MS data":
-                data_preprocessor.merge_bipolarity_cid_data()
+                data_preprocessor.merge_bipolarity_cid_data(output='pos')
             elif self.title == "Merge CID&OAD MS/MS data":
                 data_preprocessor.merge_cid_and_oad_data()
         except Exception as e:

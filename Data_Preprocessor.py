@@ -99,16 +99,20 @@ class DataPreprocessor(object):
             pos['CCS'] = 0
             txt_path = f'{self.directory}/{self.timestamp}_txt_library_pos.txt'
             pos = self.rename_for_txt_library(pos)
-            pos.to_csv(txt_path, index=False, sep='\t',
-                       columns=['Name', 'MZ', 'RT', 'Adduct', 'InChIKey',
-                                'Formula', 'SMILES', 'Ontology', 'CCS'])
+            pos.to_csv(
+                txt_path, index=False, sep='\t',
+                columns=['Name', 'MZ', 'RT', 'Adduct', 'InChIKey',
+                         'Formula', 'SMILES', 'Ontology', 'CCS']
+            )
         elif output == 'neg':
             neg['CCS'] = 0
             txt_path = f'{self.directory}/{self.timestamp}_txt_library_neg.txt'
             neg = self.rename_for_txt_library(neg)
-            neg.to_csv(txt_path, index=False, sep='\t',
-                       columns=['Name', 'MZ', 'RT', 'Adduct', 'InChIKey',
-                                'Formula', 'SMILES', 'Ontology', 'CCS'])
+            neg.to_csv(
+                txt_path, index=False, sep='\t',
+                columns=['Name', 'MZ', 'RT', 'Adduct', 'InChIKey',
+                         'Formula', 'SMILES', 'Ontology', 'CCS']
+            )
 
     def merge_cid_and_oad_data(self):
         cid_path, cid_format = self.path1, self.fmt1
@@ -146,11 +150,13 @@ class DataPreprocessor(object):
         oad.to_csv(save_path, index=False, sep='\t')
 
     def rename_for_txt_library(self, df):
-        df = df.rename(columns={'Metabolite name': 'Name',
-                                'Reference m/z': 'MZ',
-                                'Average Rt(min)': 'RT',
-                                'Adduct type': 'Adduct',
-                                'INCHIKEY': 'InChIKey'})
+        df = df.rename(
+            columns={
+                'Metabolite name': 'Name', 'Reference m/z': 'MZ',
+                'Average Rt(min)': 'RT', 'Adduct type': 'Adduct', 
+                'INCHIKEY': 'InChIKey'
+            }
+        )
         return df
 
     def check_input_format(self, path, fmt):
@@ -159,13 +165,17 @@ class DataPreprocessor(object):
             raw_table = raw_table.rename(columns={'Alignment ID': 'ID'})
         elif fmt == 'PeakList':
             raw_table = pd.read_csv(path, sep='\t')
-            raw_table = raw_table.rename(columns={'PeakID': 'ID', 
-                                                  'Title': 'Metabolite name', 
-                                                  'RT (min)': 'Average Rt(min)', 
-                                                  'Precursor m/z': 'Average Mz', 
-                                                  'Adduct': 'Adduct type', 
-                                                  'InChIKey': 'INCHIKEY', 
-                                                  'MSMS spectrum': 'MS/MS spectrum'})
+            raw_table = raw_table.rename(
+                columns={
+                    'PeakID': 'ID', 
+                    'Title': 'Metabolite name', 
+                    'RT (min)': 'Average Rt(min)', 
+                    'Precursor m/z': 'Average Mz', 
+                    'Adduct': 'Adduct type', 
+                    'InChIKey': 'INCHIKEY', 
+                    'MSMS spectrum': 'MS/MS spectrum'
+                }
+            )
         return raw_table
     
     def extract_annotated_molecules(self, df):

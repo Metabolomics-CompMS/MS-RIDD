@@ -69,17 +69,21 @@ msdial_std_columns = ['ID', 'Average Rt(min)', 'Average Mz', 'Metabolite name',
                       'Spectrum reference file name', 'MS1 isotopic spectrum', 'MS/MS spectrum']
 exclude_subclass = ['Others', 'CoQ', 'CL', 'OxTG', 'FAHFATG', 
                     'Vitamin_D', 'Vitamin_E', 'Vitamin D', 'Vitamin E']
-ref_oad_ratio = {'OAD01': 0.10, 'OAD02': 0.25, 'OAD03': 0.50, 'OAD04': 0.01, 
-                 'OAD05': 0.01, 'OAD06': 0.05, 'OAD07': 0.10, 'OAD08': 0.06, 
-                 'OAD09': 0.06, 'OAD10': 0.10, 'OAD11': 0.02, 'OAD12': 0.02, 
-                 'OAD13': 0.04, 'OAD14': 0.05, 'OAD15': 0.20, 'OAD16': 0.40, 
-                 'OAD17': 0.03, 'OAD18': 0.10, 'OAD19': 0.20, 'OAD20': 0.01}
+ref_oad_ratio = {
+    'OAD01': 0.10, 'OAD02': 0.25, 'OAD03': 0.50, 'OAD04': 0.01, 
+    'OAD05': 0.01, 'OAD06': 0.05, 'OAD07': 0.10, 'OAD08': 0.06, 
+    'OAD09': 0.06, 'OAD10': 0.10, 'OAD11': 0.02, 'OAD12': 0.02, 
+    'OAD13': 0.04, 'OAD14': 0.05, 'OAD15': 0.20, 'OAD16': 0.40, 
+    'OAD17': 0.03, 'OAD18': 0.10, 'OAD19': 0.20, 'OAD20': 0.01
+}
 
-rel_oad_ratio = {'OAD01': 0.20, 'OAD02': 0.50, 'OAD03': 1.00, 'OAD04': 0.02, 
-                 'OAD05': 0.02, 'OAD06': 0.10, 'OAD07': 0.20, 'OAD08': 0.12, 
-                 'OAD09': 0.20, 'OAD10': 0.40, 'OAD11': 0.04, 'OAD12': 0.04, 
-                 'OAD13': 0.08, 'OAD14': 0.10, 'OAD15': 0.40, 'OAD16': 0.80, 
-                 'OAD17': 0.06, 'OAD18': 0.20, 'OAD19': 0.40, 'OAD20': 0.02}
+rel_oad_ratio = {
+    'OAD01': 0.20, 'OAD02': 0.50, 'OAD03': 1.00, 'OAD04': 0.02, 
+    'OAD05': 0.02, 'OAD06': 0.10, 'OAD07': 0.20, 'OAD08': 0.12, 
+    'OAD09': 0.20, 'OAD10': 0.40, 'OAD11': 0.04, 'OAD12': 0.04, 
+    'OAD13': 0.08, 'OAD14': 0.10, 'OAD15': 0.40, 'OAD16': 0.80, 
+    'OAD17': 0.06, 'OAD18': 0.20, 'OAD19': 0.40, 'OAD20': 0.02
+}
 
 # rel_oad_ratio = {'OAD01': 0.15, 'OAD02': 0.46, 'OAD03': 1.00, 'OAD04': 0.06, 
 #                  'OAD05': 0.05, 'OAD06': 0.15, 'OAD07': 0.30, 'OAD08': 0.11, 
@@ -264,8 +268,10 @@ class SingleAnalyzer(object):
         self.oad_result_dict = {}
         self.determined_db_pos_dict = {}
         total = set_each_prgbar(each_bar, self.lipid_structural_info_dict)
-        for i, (table_id, info_dict) in enumerate(self.lipid_structural_info_dict.items(), start=1):
-            name = self.target_table[self.target_table['ID'] == table_id]['Metabolite name'].values[0]
+        for i, (table_id, info_dict) in enumerate(
+            self.lipid_structural_info_dict.items(), start=1):
+            name = self.target_table[
+                self.target_table['ID'] == table_id]['Metabolite name'].values[0]
             name = name.split('|')[1] if '|' in name else name
             each_rep.set("{}/{} : {}".format(i, total, name))
             unsaturated_moieties_num = info_dict['Unsaturated moiety']
@@ -282,8 +288,12 @@ class SingleAnalyzer(object):
                     unsaturated_moieties_num,  info_dict, msms_df, 
                     ms_tolerance_ppm, must_nl_cut_off_dict, cut_off_ratio)
             else:
-                self.oad_result_dict[table_id] = {'Resolved level': 'None', 
-                    'Validated num': 0, 'Each bools': [False], 'Moiety-1': {}}
+                self.oad_result_dict[table_id] = {
+                    'Resolved level': 'None', 
+                    'Validated num': 0, 
+                    'Each bools': [False], 
+                    'Moiety-1': {}
+                }
             each_bar.step(1)
         #endregion
         sec_rep.set("Reflecting Analysis Results")
@@ -518,7 +528,12 @@ class BatchAnalyzer(object):
         for i, (idx, structure_dict) in enumerate(self.lipid_structural_info_dict.items(), start=1):
             each_rep.set("{}/{}".format(i, total))
             msms_df = self.msms_dict[idx]
-            self.cid_result_dict[idx] = search_cid_fragment_ions(structure_dict, msms_df, ms_tolerance_ppm)
+            try:
+                self.cid_result_dict[idx] = search_cid_fragment_ions(
+                    structure_dict, msms_df, ms_tolerance_ppm)
+            except:
+                print(f'ID: {idx}')
+                pprint.pprint(structure_dict)
             each_bar.step(1)
         #endregion
         sec_rep.set("Updating Structure Database")
@@ -569,9 +584,13 @@ class BatchAnalyzer(object):
                 is_moiety_solved = False
             if unsaturated_moieties_num > 0 and is_moiety_solved:
                 msms_df = self.msms_dict[table_id]
-                self.oad_result_dict[table_id] = determine_db_positions(
-                    unsaturated_moieties_num,  info_dict, msms_df, 
-                    ms_tolerance_ppm, must_nl_cut_off_dict, cut_off_ratio)
+                try:
+                    self.oad_result_dict[table_id] = determine_db_positions(
+                        unsaturated_moieties_num,  info_dict, msms_df, 
+                        ms_tolerance_ppm, must_nl_cut_off_dict, cut_off_ratio)
+                except:
+                    print(name)
+                    pprint.pprint(info_dict)
             else:
                 self.oad_result_dict[table_id] = {'Resolved level': 'None', 
                     'Validated num': 0, 'Each bools': [False], 'Moiety-1': {}}
@@ -936,15 +955,19 @@ def determine_db_positions(unsaturated_moieties_num, structure_dict,
     cut_off_df = msms_df[msms_df['Ratio(%)'] >= cut_off_ratio]
     score_cutoff = 0
     ref_oad_dict = {}
-    ref_oad_dict = generate_reference_oad_dict(structure_dict,
-        unsaturated_moieties_num, msms_df, ms_tolerance, must_nl_cut_off_dict)
-    unresolved_d = {0: {'Positions': '', 'N-description': 'Unresolved',
-                        'Score': '###', 'Ratio sum': '###', 'Presence': '###',
-                        'Notice': 'Unresolved', 
-                        'Measured peaks': [[0, 0, 0]], 
-                        'Ref peaks': [['', 0, 0, 0]], 
-                        'Peaks dict': {'none': [0, 0, 0, 0, 0]}}
-                    }
+    ref_oad_dict = generate_reference_oad_dict(
+        structure_dict, unsaturated_moieties_num, msms_df, 
+        ms_tolerance, must_nl_cut_off_dict
+    )
+    unresolved_d = {
+        0: {'Positions': '', 'N-description': 'Unresolved',
+            'Score': '###', 'Ratio sum': '###', 'Presence': '###',
+            'Notice': 'Unresolved', 
+            'Measured peaks': [[0, 0, 0]], 
+            'Ref peaks': [['', 0, 0, 0]], 
+            'Peaks dict': {'none': [0, 0, 0, 0, 0]}
+            }
+    }
     #endregion
 
     if unsaturated_moieties_num == 1:
@@ -968,14 +991,16 @@ def determine_db_positions(unsaturated_moieties_num, structure_dict,
             db_in_sphingobase=db_in_sphingobase, c_num=c_num_1, db_num=db_num_1, 
             for_range=for_range_1, tolerance=ms_tolerance, 
             must_nl_cut_off_dict=must_nl_cut_off_dict, 
-            structure_dict=structure_dict)
+            structure_dict=structure_dict
+        )
         #endregion
         """ Calculating presence rate and ratio sum via reference """
         #region
         sph_set = [db_in_sphingobase, c_num_1]
         score_info_dict = calc_presence_ratios_and_score(
             ref_oad_dict_1, diagnostic_ions_result_dict_1, cut_off_df, 
-            ref_precursor_mz, ms_tolerance_ppm, sph_set)
+            ref_precursor_mz, ms_tolerance_ppm, sph_set
+        )
         #endregion
         """ Sorting the result by MS/MS simularity """
         #region
@@ -993,10 +1018,12 @@ def determine_db_positions(unsaturated_moieties_num, structure_dict,
             validated_num = 0
             bool_list = [False]
         sorted_dict = add_determined_db_info(sorted_dict)
-        total_result_dict = {'Resolved level': revolved_level, 
-                             'Validated num': validated_num,
-                             'Each bools': bool_list, 
-                             'Moiety-1': sorted_dict}
+        total_result_dict = {
+            'Resolved level': revolved_level, 
+            'Validated num': validated_num,
+            'Each bools': bool_list, 
+            'Moiety-1': sorted_dict
+        }
         return total_result_dict
         #endregion
 
@@ -1296,9 +1323,11 @@ def generate_reference_oad_dict(structure_dict, unsaturated_moieties_num,
                 db_num = structure_dict['Each moiety info']['db-3']
         db_combs_d['1'] = calculate_db_pairs(
             chain_num, db_num, structure_dict, msms_df, ms_tolerance,
-            db_in_sphingobase, must_nl_cut_off_dict, deuterium)
+            db_in_sphingobase, must_nl_cut_off_dict, deuterium
+        )
         ref_oad_dict['1'] = generate_ref_oad_nl_and_type(
-            db_combs_d['1'], ontology, deuterium)
+            db_combs_d['1'], ontology, deuterium
+        )
     elif unsaturated_moieties_num == 2:
         if moieties_info_length == 4:
             chain_num_1 = structure_dict['Each moiety info']['chain-1'] - 1
@@ -1306,11 +1335,13 @@ def generate_reference_oad_dict(structure_dict, unsaturated_moieties_num,
             chain_num_2 = structure_dict['Each moiety info']['chain-2'] - 1
             db_num_2 = structure_dict['Each moiety info']['db-2']
             if ontology == 'SM': deuterium = 0
+            if ontology == 'Cer_NS': deuterium = structure_dict['Deuterium']
             db_combs_d['1'] = calculate_db_pairs(chain_num_1, db_num_1, 
                 structure_dict, msms_df, ms_tolerance, 
                 db_in_sphingobase, must_nl_cut_off_dict, deuterium)
             db_in_sphingobase = False
             if ontology == 'SM': deuterium = structure_dict['Deuterium']
+            if ontology == 'Cer_NS': deuterium = 0
             db_combs_d['2'] = calculate_db_pairs(chain_num_2, db_num_2, 
                 structure_dict, msms_df, ms_tolerance,
                 db_in_sphingobase, must_nl_cut_off_dict, deuterium)
@@ -1351,11 +1382,15 @@ def generate_reference_oad_dict(structure_dict, unsaturated_moieties_num,
                     structure_dict, msms_df, ms_tolerance,
                     db_in_sphingobase, must_nl_cut_off_dict, deuterium)
         if ontology == 'SM': deuterium = 0
+        if ontology == 'Cer_NS': deuterium = structure_dict['Deuterium']
         ref_oad_dict['1'] = generate_ref_oad_nl_and_type(
-            db_combs_d['1'], ontology, deuterium)
+            db_combs_d['1'], ontology, deuterium
+        )
         if ontology == 'SM': deuterium = structure_dict['Deuterium']
+        if ontology == 'Cer_NS': deuterium = 0
         ref_oad_dict['2'] = generate_ref_oad_nl_and_type(
-            db_combs_d['2'], ontology, deuterium)
+            db_combs_d['2'], ontology, deuterium
+        )
     elif unsaturated_moieties_num == 3:
         chain_num_1 = structure_dict['Each moiety info']['chain-1'] - 1
         db_num_1 = structure_dict['Each moiety info']['db-1']
@@ -1384,12 +1419,14 @@ def generate_reference_oad_dict(structure_dict, unsaturated_moieties_num,
 #Diagnostic ions
 def calculate_db_pairs(chain_num, db_num, structure_dict, msms_df, 
     ms_tolerance, db_in_sphingobase, must_nl_cut_off_dict, deuterium):
-    delete_cand_h = []    
-    delete_cand_t = []
-    cut_off_df = msms_df[msms_df['Ratio(%)'] >= must_nl_cut_off_dict['diagnostic_1'][1]]
-    # essential_ion_type = must_nl_cut_off_dict['diagnostic_1'][0]
-    essential_ion_type = 'OAD03'
+    delete_cand_h, delete_cand_t = [], []
     ontology = structure_dict['Ontology']
+    # class_based_cutoff = get_class_specific_cutoff(ontology, ion=1)
+    # cut_off_df = msms_df[msms_df['Ratio(%)'] >= class_based_cutoff]
+    cut_off_df = msms_df[
+        msms_df['Ratio(%)'] >= must_nl_cut_off_dict['diagnostic_1'][1]
+    ]
+    essential_ion_type = must_nl_cut_off_dict['diagnostic_1'][0]
     ref_mz = structure_dict['Ref precursor Mz']
     h2o_ms = ex_mass['H2O']
     dHs = deuterium*(ex_mass['D'] - ex_mass['H'])
@@ -1409,15 +1446,18 @@ def calculate_db_pairs(chain_num, db_num, structure_dict, msms_df,
                 counter += 1
             i += 1
         comb_list_len = len(db_combs)
-        refined_db_combs = [db_combs[i] for i in range(0, comb_list_len) \
-                            if i not in remove_tuples_index_set]
+        refined_db_combs = [
+            db_combs[i] for i in range(0, comb_list_len) 
+            if i not in remove_tuples_index_set
+        ]
         return refined_db_combs
     else: # Generating ref OAD ions list
         essential_nl_dict_head = {}
         for position in range(3, chain_num): # 1st C=C
             mass_shift = 0
             ref_oad_ion = simulate_diagnostic_1_ions(
-                position, essential_ion_type, mass_shift, dHs)
+                position, essential_ion_type, mass_shift, dHs
+            )
             essential_nl_dict_head[position] = ref_oad_ion
         if db_num >= 2: # multiple C=C
             essential_nl_dict_tail = {}
@@ -1425,7 +1465,8 @@ def calculate_db_pairs(chain_num, db_num, structure_dict, msms_df,
             mass_shift = 2*ex_mass['H']*mass_shift_counter
             for position in range(3+db_num-1, chain_num):
                 ref_oad_ion = simulate_diagnostic_1_ions(
-                    position, essential_ion_type, mass_shift, dHs)
+                    position, essential_ion_type, mass_shift, dHs
+                )
                 essential_nl_dict_tail[position] = ref_oad_ion
 
     #region Selecting unnecessary candidates
@@ -1433,8 +1474,10 @@ def calculate_db_pairs(chain_num, db_num, structure_dict, msms_df,
         for pos, nl in essential_nl_dict_head.items(): # 1st C=C
             head_mz = ref_mz - nl - ms_tolerance
             tail_mz = ref_mz - nl + ms_tolerance
-            extracted_df = cut_off_df[(cut_off_df['frag m/z'] >= head_mz)
-                                     &(cut_off_df['frag m/z'] <= tail_mz)]
+            extracted_df = cut_off_df[
+                (cut_off_df['frag m/z'] >= head_mz)
+               &(cut_off_df['frag m/z'] <= tail_mz)
+            ]
             len_of_extracted_df = len(extracted_df)
             if len_of_extracted_df == 0:
                 delete_cand_h.append(pos)
@@ -1442,8 +1485,10 @@ def calculate_db_pairs(chain_num, db_num, structure_dict, msms_df,
             for pos, nl in essential_nl_dict_tail.items():
                 head_mz = ref_mz - nl - ms_tolerance
                 tail_mz = ref_mz - nl + ms_tolerance
-                extracted_df = cut_off_df[(cut_off_df['frag m/z'] >= head_mz)
-                                         &(cut_off_df['frag m/z'] <= tail_mz)]
+                extracted_df = cut_off_df[
+                    (cut_off_df['frag m/z'] >= head_mz)
+                   &(cut_off_df['frag m/z'] <= tail_mz)
+                ]
                 len_of_extracted_df = len(extracted_df)
                 if len_of_extracted_df == 0:
                     delete_cand_t.append(pos)
@@ -1453,10 +1498,14 @@ def calculate_db_pairs(chain_num, db_num, structure_dict, msms_df,
             tail_mz = ref_mz - nl + ms_tolerance
             head_H2O_mz = ref_mz - nl - ms_tolerance - h2o_ms
             tail_H2O_mz = ref_mz - nl + ms_tolerance - h2o_ms
-            extracted_df = cut_off_df[(cut_off_df['frag m/z'] >= head_mz)
-                                     &(cut_off_df['frag m/z'] <= tail_mz)]
-            extracted_H2O_df = cut_off_df[(cut_off_df['frag m/z'] >= head_H2O_mz)
-                                         &(cut_off_df['frag m/z'] <= tail_H2O_mz)]
+            extracted_df = cut_off_df[
+                (cut_off_df['frag m/z'] >= head_mz)
+               &(cut_off_df['frag m/z'] <= tail_mz)
+            ]
+            extracted_H2O_df = cut_off_df[
+                (cut_off_df['frag m/z'] >= head_H2O_mz)
+               &(cut_off_df['frag m/z'] <= tail_H2O_mz)
+            ]
             len_of_extracted_df = len(extracted_df)
             len_of_extracted_H2O_df = len(extracted_H2O_df)
             if (len_of_extracted_df == 0) and (len_of_extracted_H2O_df == 0):
@@ -1467,10 +1516,14 @@ def calculate_db_pairs(chain_num, db_num, structure_dict, msms_df,
                 tail_mz = ref_mz - nl + ms_tolerance
                 head_H2O_mz = ref_mz - nl - ms_tolerance - h2o_ms
                 tail_H2O_mz = ref_mz - nl + ms_tolerance - h2o_ms
-                extracted_df = cut_off_df[(cut_off_df['frag m/z'] >= head_mz)
-                                         &(cut_off_df['frag m/z'] <= tail_mz)]
-                extracted_H2O_df = cut_off_df[(cut_off_df['frag m/z'] >= head_H2O_mz)
-                                             &(cut_off_df['frag m/z'] <= tail_H2O_mz)]
+                extracted_df = cut_off_df[
+                    (cut_off_df['frag m/z'] >= head_mz)
+                   &(cut_off_df['frag m/z'] <= tail_mz)
+                ]
+                extracted_H2O_df = cut_off_df[
+                    (cut_off_df['frag m/z'] >= head_H2O_mz)
+                   &(cut_off_df['frag m/z'] <= tail_H2O_mz)
+                ]
                 len_of_extracted_df = len(extracted_df)
                 len_of_extracted_H2O_df = len(extracted_H2O_df)
                 if (len_of_extracted_df == 0) and (len_of_extracted_H2O_df == 0):
@@ -1479,8 +1532,10 @@ def calculate_db_pairs(chain_num, db_num, structure_dict, msms_df,
     #region Return possible double bond position list
     chain_range = range(3, chain_num)
     db_combs = list(itertools.combinations(chain_range, db_num))    
-    db_combs = [each_comb for each_comb in db_combs \
-                if each_comb[0] not in delete_cand_h and each_comb[-1] not in delete_cand_t]
+    db_combs = [
+        each_comb for each_comb in db_combs if each_comb[0] not in delete_cand_h 
+        and each_comb[-1] not in delete_cand_t
+    ]
     i = 0
     remove_tuples_index_set = set()
     for v in db_combs:
@@ -1492,8 +1547,10 @@ def calculate_db_pairs(chain_num, db_num, structure_dict, msms_df,
             counter += 1
         i += 1
     comb_list_len = len(db_combs)
-    refined_db_combs = [db_combs[i] for i in range(0, comb_list_len) \
-                        if i not in remove_tuples_index_set]
+    refined_db_combs = [
+        db_combs[i] for i in range(0, comb_list_len) 
+        if i not in remove_tuples_index_set
+    ]
     #endregion
     return refined_db_combs
 
@@ -1512,6 +1569,13 @@ def simulate_diagnostic_1_ions(pos, ion_type, ms_sht, dHs):
         """ -C*(X-1)-2*H*(X-1)-2H+O,    ex) -98.145935  in n-9  """
         pre_mnO_L2H = c_ms*(pos-1)+2*h_ms*(pos-1)+2*h_ms-o_ms - ms_sht + dHs
         return pre_mnO_L2H
+
+def get_class_specific_cutoff(ontology, ion):
+    base_cutoff = 0.01
+    if ontology == 'PC':
+        return base_cutoff if ion == 1 else base_cutoff
+    else:
+        return base_cutoff
 
 #NL registration
 def generate_ref_oad_nl_and_type(db_positions_comb_dict, ontology, deuterium):
@@ -1762,10 +1826,14 @@ def query_essential_diagnostic_ions(df, ref_oad_dict, db_in_sphingobase,
     diagnostic_nl_dict = {}
     ontology = structure_dict['Ontology']
     ref_mz = structure_dict['Ref precursor Mz']
-    # diagnostic_1_type = must_nl_cut_off_dict['diagnostic_1'][0]
+    diagnostic_1_type = must_nl_cut_off_dict['diagnostic_1'][0]
+    diagnostic_2_type = must_nl_cut_off_dict['diagnostic_2'][0]
     diagnostic_1_cutoff = must_nl_cut_off_dict['diagnostic_1'][1]
-    # diagnostic_2_type = must_nl_cut_off_dict['diagnostic_2'][0]
     diagnostic_2_cutoff = must_nl_cut_off_dict['diagnostic_2'][1]
+    # diagnostic_1_cutoff = get_class_specific_cutoff(ontology=ontology, ion=1)
+    # diagnostic_2_cutoff = get_class_specific_cutoff(ontology=ontology, ion=2)
+    post_tag1 = '+O-H/OAD03' if diagnostic_1_type == 'OAD03' else '+O/OAD02'
+    post_tag2 = '-H/OAD16' if diagnostic_2_type == 'OAD16' else 'none/OAD15'
     cut_1_df = df[df['Ratio(%)'] >= diagnostic_1_cutoff]
     cut_2_df = df[df['Ratio(%)'] >= diagnostic_2_cutoff]
     sph_df = df[df['Ratio(%)'] >= must_nl_cut_off_dict['sphingobase']]
@@ -1773,9 +1841,9 @@ def query_essential_diagnostic_ions(df, ref_oad_dict, db_in_sphingobase,
         for pos, tag_and_nl in ref_oad_dict.items():
             each_pos_bool = []
             tags_of_dgn_1 \
-            = [f'n-{each}/dis@n-{each-1}/+O-H/OAD03' for each in pos]
+            = [f'n-{each}/dis@n-{each-1}/{post_tag1}' for each in pos]
             tags_of_dgn_2 \
-            = [f'n-{each}/dis@n-{each+1}/-H/OAD16' for each in pos]
+            = [f'n-{each}/dis@n-{each+1}/{post_tag2}' for each in pos]
             dgn_1_nls = [tag_and_nl[tag] for tag in tags_of_dgn_1]
             dgn_2_nls = [tag_and_nl[tag] for tag in tags_of_dgn_2]
             head_dgn_1_mzs = [ref_mz - nl - tol for nl in dgn_1_nls]
@@ -1799,18 +1867,20 @@ def query_essential_diagnostic_ions(df, ref_oad_dict, db_in_sphingobase,
                     each_pos_bool.append(False)
             diagnostic_nl_dict[pos] = each_pos_bool
     else:
+        post_tag3 = '+O-H-H2O/OAD07' if diagnostic_1_type == 'OAD03' else '+O-H2O/OAD06'
+        post_tag4 = '-H-H2O/OAD19' if diagnostic_2_type == 'OAD16' else '-H2O/OAD18'
         if db_in_sphingobase:
             last_loop = db_num -1
             for pos, tag_and_nl in ref_oad_dict.items():
                 each_pos_bool = []
                 tags_of_dgn_1 \
-                = [f'n-{each}/dis@n-{each-1}/+O-H/OAD03' for each in pos]
+                = [f'n-{each}/dis@n-{each-1}/{post_tag1}' for each in pos]
                 tags_of_dgn_2 \
-                = [f'n-{each}/dis@n-{each+1}/-H/OAD16' for each in pos]
+                = [f'n-{each}/dis@n-{each+1}/{post_tag2}' for each in pos]
                 tags_of_dgn_3 \
-                = [f'n-{each}/dis@n-{each-1}/+O-H-H2O/OAD07' for each in pos]
+                = [f'n-{each}/dis@n-{each-1}/{post_tag3}' for each in pos]
                 tags_of_dgn_4 \
-                = [f'n-{each}/dis@n-{each+1}/-H-H2O/OAD19' for each in pos]
+                = [f'n-{each}/dis@n-{each+1}/{post_tag4}' for each in pos]
                 dgn_1_nls = [tag_and_nl[tag] for tag in tags_of_dgn_1]
                 dgn_2_nls = [tag_and_nl[tag] for tag in tags_of_dgn_2]
                 dgn_3_nls = [tag_and_nl[tag] for tag in tags_of_dgn_3]
@@ -1904,10 +1974,10 @@ def query_essential_diagnostic_ions(df, ref_oad_dict, db_in_sphingobase,
         else:
             for pos, tag_and_nl in ref_oad_dict.items():
                 each_pos_bool = []
-                tags_of_dgn_1 = [f'n-{each}/dis@n-{each-1}/+O-H/OAD03' for each in pos]
-                tags_of_dgn_2 = [f'n-{each}/dis@n-{each+1}/-H/OAD16' for each in pos]
-                tags_of_dgn_3 = [f'n-{each}/dis@n-{each-1}/+O-H-H2O/OAD07' for each in pos]
-                tags_of_dgn_4 = [f'n-{each}/dis@n-{each+1}/-H-H2O/OAD19' for each in pos]
+                tags_of_dgn_1 = [f'n-{each}/dis@n-{each-1}/{post_tag1}' for each in pos]
+                tags_of_dgn_2 = [f'n-{each}/dis@n-{each+1}/{post_tag2}' for each in pos]
+                tags_of_dgn_3 = [f'n-{each}/dis@n-{each-1}/{post_tag3}' for each in pos]
+                tags_of_dgn_4 = [f'n-{each}/dis@n-{each+1}/{post_tag4}' for each in pos]
                 dgn_1_nls = [tag_and_nl[tag] for tag in tags_of_dgn_1]
                 dgn_2_nls = [tag_and_nl[tag] for tag in tags_of_dgn_2]
                 dgn_3_nls = [tag_and_nl[tag] for tag in tags_of_dgn_3]
@@ -1965,10 +2035,12 @@ def calc_presence_ratios_and_score(ref_oad_dict, diagnostic_ions_result_dict,
         if all(diagnostic_ions_result_dict[positions]):
             presence_counter, ratio_sum = 0, 0
             next_to_3oh = sph_set[0] and ((sph_set[1]-positions[-1]) == 4)
-            each_score_d = {'Positions': '', 'N-description': '',
-                            'Score': 0, 'Ratio sum': 0, 'Presence': 0,
-                            'Notice': '', 'Measured peaks': [],
-                            'Ref peaks': [], 'Peaks dict': {}}
+            each_score_d = {
+                'Positions': '', 'N-description': '',
+                'Score': 0, 'Ratio sum': 0, 'Presence': 0,
+                'Notice': '', 'Measured peaks': [],
+                'Ref peaks': [], 'Peaks dict': {}
+            }
             # Measured peaks: [[Measured m/z, Measured ratio, ppm], [...]]
             # Ref peaks: [[OAD type, Ref m/z, Ref NL, Ref ratio], [...]]
             # Peaks dict = {'n-9/dis@n-8/+O/OAD03': [Ref m/z, Ref delta, 
@@ -1982,10 +2054,14 @@ def calc_presence_ratios_and_score(ref_oad_dict, diagnostic_ions_result_dict,
                 if next_to_3oh and db == positions[-1]:
                     tag_num = int(tag.split('OAD')[-1])
                     if tag_num >= 15:
-                        mz, ratio, ppm = query_matched_ion_by_ppm(cut_df, ref_mz, tol)
+                        mz, ratio, ppm = query_matched_ion_by_ppm(
+                            cut_df, ref_mz, tol
+                        )
                     else: continue
                 else:
-                    mz, ratio, ppm = query_matched_ion_by_ppm(cut_df, ref_mz, tol)
+                    mz, ratio, ppm = query_matched_ion_by_ppm(
+                        cut_df, ref_mz, tol
+                    )
                 if mz > 0:
                     presence_counter += 1
                     ratio_sum += ratio
@@ -2034,6 +2110,7 @@ def calc_presence_ratios_and_score(ref_oad_dict, diagnostic_ions_result_dict,
             counter += 1
     return score_dict
 
+#Function which can implement isotope ion correction
 def get_ref_ratio_via_db_position(positions, key):
     pre = ['OAD01', 'OAD02', 'OAD03', 'OAD04', 'OAD05', 'OAD06', 'OAD07']
     post = ['OAD15', 'OAD16', 'OAD17']
