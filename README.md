@@ -12,6 +12,7 @@ Packages included in requirements_pip.yaml are also required to be installed.
 
 ## Usage
 MS-RIDD supports the export format of peak list and alignment result from MS-DIAL software.
+Please see the MS-RIDD tutorial (PDF file) to start the analysis.
 For preparaing an input data, you need mzML file of OAD-MS/MS and text library that reflects the result of CID-MS/MS data.
 To prepare a text library, please see the tutorial of MS-DIAL: https://mtbinfo-team.github.io/mtbinfo.github.io/
 
