@@ -93,9 +93,17 @@ rel_oad_ratio = {
 #endregion
 
 class SingleAnalyzer(object):
+    """ Definition of class that generates data object to analyze, visualize,
+        modify, and save OAD-MS/MS spectra and annotations for single data 
+        format.
+    """
     def __init__(self, tabel_format, directry, prefix, input_data, 
                  ms_tolerance_ppm, must_nl_cut_off_dict, cut_off_ratio, 
                  file_name, sec_rep, sec_bar, each_rep, each_bar, timer):
+        """
+        Args:
+            table_format
+        """
         sec_rep.set("Data Pre-processing")
         sec_bar["maximum"] = 9
         #region Data preprocessing
@@ -348,6 +356,10 @@ class SingleAnalyzer(object):
         sec_bar.step(1)
 
 class BatchAnalyzer(object):
+    """ Definition of class that generates data object to analyze, visualize,
+        modify, and save OAD-MS/MS spectra and annotations for batch data 
+        format.
+    """
     def __init__(self, directry, prefix, alignment_path, peakid_path, 
         peaklists_dict, ms_tolerance_ppm, must_nl_cut_off_dict, cut_off_ratio, 
         normalized, sec_rep, sec_bar, each_rep, each_bar, timer):
@@ -649,6 +661,14 @@ class BatchAnalyzer(object):
 
 #region Utilities
 def get_annotated_df(raw_df):
+    """ Extract annotated metabolites in given dataframe
+
+    Args:
+        raw_df (Dataframe): Dataframe as MS-DIAL format.
+    
+    Returns:
+        df (Dataframe): Returns the dataframe only with annotated metabolites
+    """
     df = raw_df.dropna(subset=['Metabolite name'])
     df = df.dropna(subset=['MS/MS spectrum'])
     df = df[df['Metabolite name'] != 'Unknown']
@@ -660,6 +680,15 @@ def get_annotated_df(raw_df):
     return df
 
 def refine_comments(txt, excluding_list):
+    """ Exclude the unwanted words in given string
+
+    Args:
+        txt (str): target string
+        excluding_list (list): list of unwated words
+
+    Returns:
+        txt (str): Returns the string without unwanted words
+    """
     if txt == '': return txt
     else:
         if '; ' in txt: txt = txt.split('; ')[0]
@@ -668,10 +697,20 @@ def refine_comments(txt, excluding_list):
         return txt
 
 def set_each_prgbar(prgbar, li):
+    """ Set 0 and total value to progress bar
+
+    Args:
+        prgbar (object): Progressbar object
+        li (list): list of target metabolites
+
+    Returns:
+        int: Returns total values (int)
+    """
     prgbar["value"] = 0
     prgbar["maximum"] = len(li)
     return len(li)
 
+#region Not used function
 def each_process_timer(label, start):
     hour, minute, second = 0, 0, 0
     while start:
@@ -697,6 +736,7 @@ def each_process_timer(label, start):
             m=str(minute), s=str(second)))
     if not start:
         hour, minute, second = 0, 0, 0
+#endregion
 
 def math_floor(num, digit):
     floored = math.floor(num*10**digit)/(10**digit)
@@ -705,6 +745,16 @@ def math_floor(num, digit):
 
 #region Graph dict
 def set_oad_graph_dict_value(oad_dict, lipid_info):
+    """ Generate dictionary for visualizing graphs of OAD-MS/MS spectra
+
+    Args:
+        oad_dict (dict): 
+        lipid_info (dict): 
+
+    Returns:
+        graph_dict (dict):  Returns dict containing MS2 Mz, Ref precursor Mz,
+                            Ontology, x-range, Magnification, Bar_width
+    """
     #region Data structure
     # dict = {0:              {'Positions': '', 'N-description': '', 'Score': float, 
     #                          'Ratio sum': float, 'Presence': float, 'Notice': '',
