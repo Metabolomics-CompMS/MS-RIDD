@@ -1744,6 +1744,8 @@ class MSRIDD_GUI(tk.Frame):
         self.result_table_tree.bind("<<TreeviewSelect>>", self.data_setting)
 
     def focus_and_select_db_trees(self):
+        """ Set focus and selection to C=C positional candidate currently selected
+        """
         iid_1 = self.db_1_tree.get_children()[0]
         self.db_1_tree.focus(iid_1)
         self.db_1_tree.selection_set(iid_1)
@@ -1755,6 +1757,9 @@ class MSRIDD_GUI(tk.Frame):
         self.db_3_tree.selection_set(iid_3)
 
     def partially_update_data(self, event):
+        """ Re-render mass table and OAD-MS/MS spectra via selected
+            C=C positional candidate
+        """
         db_list = self.get_current_db_pos_and_rank()
         db_1_pos = db_list[0][1]
         db_2_pos = db_list[1][1]
@@ -1798,6 +1803,13 @@ class MSRIDD_GUI(tk.Frame):
             )
 
     def get_current_db_pos_and_rank(self):
+        """ Get C=C positions and those ranking currently selected
+
+        Returns:
+            list[list]: [
+                [rank_1, db_1_pos], [rank_2, db_2_pos], [rank_3, db_3_pos]
+            ]
+        """
         # tree.column = ['Rank', 'moiety-1', 'Score', 'Presence', 'Rel. Int']
         def find_rank(pos, moiety):
             for rank, d in moiety.items():
@@ -1805,17 +1817,23 @@ class MSRIDD_GUI(tk.Frame):
                     return rank
             return -1
         try:
-            tree1_item = self.db_1_tree.item(self.db_1_tree.selection()[0],'values')
+            tree1_item = self.db_1_tree.item(
+                self.db_1_tree.selection()[0],'values'
+            )
             db_1_pos = tree1_item[1]
         except:
             db_1_pos = ''
         try:
-            tree2_item = self.db_2_tree.item(self.db_2_tree.selection()[0],'values')
+            tree2_item = self.db_2_tree.item(
+                self.db_2_tree.selection()[0],'values'
+            )
             db_2_pos = tree2_item[1]
         except:
             db_2_pos = ''
         try:
-            tree3_item = self.db_3_tree.item(self.db_3_tree.selection()[0],'values')
+            tree3_item = self.db_3_tree.item(
+                self.db_3_tree.selection()[0],'values'
+            )
             db_3_pos = tree3_item[1]
         except:
             db_3_pos = ''
@@ -1833,6 +1851,14 @@ class MSRIDD_GUI(tk.Frame):
         return [[rank_1, db_1_pos], [rank_2, db_2_pos], [rank_3, db_3_pos]]
 
     def judge_db_change(self, new_db_1, new_db_2, new_db_3):
+        """ Get C=C positions and those ranking currently selected
+
+        Args:
+            new_db_1, new_db_2, new_db_3 (str): C=C positions
+
+        Returns
+            list(bool): Whether selected C=C positions are changed
+        """
         old_db_1, old_db_2, old_db_3 = '', '', ''
         result_dict = self.oad_result_dict[self.selected_idx]
         result_dict_len = len(result_dict)
@@ -1875,6 +1901,8 @@ class MSRIDD_GUI(tk.Frame):
         return [db_1_changed, db_2_changed, db_3_changed]
 
     def modify_db_pos(self):
+        """ Modify annotated C=C positions to other positions currently selected
+        """
         db_list = self.get_current_db_pos_and_rank()
         rank_1, rank_2, rank_3 = db_list[0][0], db_list[1][0], db_list[2][0]
         new_db_1, new_db_2, new_db_3 \
@@ -1887,23 +1915,43 @@ class MSRIDD_GUI(tk.Frame):
         idx = self.selected_idx
         if any([db_1_changed, db_2_changed, db_3_changed]):
             if db_1_changed:
-                self.re_const_oad_res_dict(idx=idx, moiety_num=1, rank=rank_1,
-                    old_db=old_db_1, new_db=new_db_1)
+                self.re_const_oad_res_dict(
+                    idx=idx, moiety_num=1, rank=rank_1,
+                    old_db=old_db_1, new_db=new_db_1
+                )
             if db_2_changed:
-                self.re_const_oad_res_dict(idx=idx, moiety_num=2, rank=rank_2,
-                    old_db=old_db_2, new_db=new_db_2)
+                self.re_const_oad_res_dict(
+                    idx=idx, moiety_num=2, rank=rank_2,
+                    old_db=old_db_2, new_db=new_db_2
+                )
             if db_3_changed:
-                self.re_const_oad_res_dict(idx=idx, moiety_num=3, rank=rank_3,
-                    old_db=old_db_3, new_db=new_db_3)
+                self.re_const_oad_res_dict(
+                    idx=idx, moiety_num=3, rank=rank_3,
+                    old_db=old_db_3, new_db=new_db_3
+                )
             df = self.target_table[self.target_table['ID'] == idx]
             row = list(df.index)[0]
             old_name = df['OAD result name'].values[0]
-            new_name = self.update_oad_result_name(idx=idx, 
-                old_name=old_name, db_list=db_list, bool_list=bool_list)
+            new_name = self.update_oad_result_name(
+                idx=idx, old_name=old_name, db_list=db_list, bool_list=bool_list
+            )
             self.target_table.loc[row:row, ['OAD result name']] = new_name
             self.update_result_table(idx)
 
     def update_oad_result_name(self, idx, old_name, db_list, bool_list):
+        """ Update OAD result name as newly selected C=C positions
+
+        Args:
+            idx (int): index of current metabolite
+            old_name (str): previous metabolite name
+            db_list (list[list]): [
+                [rank_1, db_1_pos], [rank_2, db_2_pos], [rank_3, db_3_pos]
+            ]
+            bool_list (list[bool]): [db_1_changed, db_2_changed, db_3_changed]
+        
+        Returns:
+            new_name (str): new metabolite name whose C=C positions are updated
+        """
         new_db_1, new_db_2, new_db_3 \
             = db_list[0][1], db_list[1][1], db_list[2][1]
         old_db_1, old_db_2, old_db_3 \
@@ -1919,104 +1967,120 @@ class MSRIDD_GUI(tk.Frame):
                 self.oad_result_dict[idx]['Each bools'][acyl_num] = True
         if len(moiety_info) == 2:
             if db_1_changed:
-                new_name = self.replace_one_pos_in_moiety(info=moiety_info, 
-                    old_name=old_name, old_db=old_db_1, new_db=new_db_1)
+                new_name = self.replace_one_pos_in_moiety(
+                    info=moiety_info, 
+                    old_name=old_name, old_db=old_db_1, new_db=new_db_1
+                )
                 set_resolved_bool(idx=idx, new_db=new_db_1, acyl_num=0)
         elif len(moiety_info) == 4:
             if unsaturated_moiety_num == 1:
                 if db_1_changed:
                     if moiety_info['db-1'] > 0:
                         new_name = self.replace_one_pos_in_dimoieties(
-                                num=1, old_name=old_name, info=moiety_info, 
-                                old_db=old_db_1, new_db=new_db_1)
+                            num=1, old_name=old_name, info=moiety_info, 
+                            old_db=old_db_1, new_db=new_db_1
+                        )
                     else:
                         new_name = self.replace_one_pos_in_dimoieties(
-                                num=2, old_name=old_name, info=moiety_info, 
-                                old_db=old_db_1, new_db=new_db_1)
+                            num=2, old_name=old_name, info=moiety_info, 
+                            old_db=old_db_1, new_db=new_db_1
+                        )
                     set_resolved_bool(idx=idx, new_db=new_db_1, acyl_num=0)
             elif unsaturated_moiety_num == 2:
                 if db_1_changed and db_2_changed:
                     new_name = self.replace_two_pos_in_dimoieties(
                         info=moiety_info, old_name=old_name, 
                         old_db_1=old_db_1, new_db_1=new_db_1, 
-                        old_db_2=old_db_2, new_db_2=new_db_2)
+                        old_db_2=old_db_2, new_db_2=new_db_2
+                    )
                     set_resolved_bool(idx=idx, new_db=new_db_1, acyl_num=0)
                     set_resolved_bool(idx=idx, new_db=new_db_2, acyl_num=1)
                 elif db_1_changed:
                     new_name = self.replace_one_pos_in_dimoieties(
-                                num=1, old_name=old_name, info=moiety_info, 
-                                old_db=old_db_1, new_db=new_db_1)
+                        num=1, old_name=old_name, info=moiety_info, 
+                        old_db=old_db_1, new_db=new_db_1
+                    )
                     set_resolved_bool(idx=idx, new_db=new_db_1, acyl_num=0)
                 elif db_2_changed:
                     new_name = self.replace_one_pos_in_dimoieties(
-                                num=2, old_name=old_name, info=moiety_info, 
-                                old_db=old_db_2, new_db=new_db_2)
+                        num=2, old_name=old_name, info=moiety_info, 
+                        old_db=old_db_2, new_db=new_db_2
+                    )
                     set_resolved_bool(idx=idx, new_db=new_db_2, acyl_num=1)
         elif len(moiety_info) == 6:
             if unsaturated_moiety_num == 1:
                 if db_1_changed:
                     if moiety_info['db-1'] > 0:
                         new_name = self.replace_one_pos_in_trimoieties(
-                                    num=1, old_name=old_name, info=moiety_info, 
-                                    old_db=old_db_1, new_db=new_db_1)
+                            num=1, old_name=old_name, info=moiety_info, 
+                            old_db=old_db_1, new_db=new_db_1
+                        )
                     elif moiety_info['db-2'] > 0:
                         new_name = self.replace_one_pos_in_trimoieties(
-                                    num=2, old_name=old_name, info=moiety_info, 
-                                    old_db=old_db_1, new_db=new_db_1)
+                            num=2, old_name=old_name, info=moiety_info, 
+                            old_db=old_db_1, new_db=new_db_1
+                        )
                     else:
                         new_name = self.replace_one_pos_in_trimoieties(
-                                    num=3, old_name=old_name, info=moiety_info, 
-                                    old_db=old_db_1, new_db=new_db_1)
+                            num=3, old_name=old_name, info=moiety_info, 
+                            old_db=old_db_1, new_db=new_db_1
+                        )
                     set_resolved_bool(idx=idx, new_db=new_db_1, acyl_num=0)
             if unsaturated_moiety_num == 2:
                 if db_1_changed and db_2_changed:
                     if moiety_info['db-1'] > 0 and moiety_info['db-2'] > 0:
                         new_name = self.replace_two_pos_in_trimoieties(
-                                    num1=1, num2=2, old_name=old_name, 
-                                    info=moiety_info, 
-                                    old_db_1=old_db_1, new_db_1=new_db_1,
-                                    old_db_2=old_db_2, new_db_2=new_db_2)
+                            num1=1, num2=2, old_name=old_name, info=moiety_info, 
+                            old_db_1=old_db_1, new_db_1=new_db_1,
+                            old_db_2=old_db_2, new_db_2=new_db_2
+                        )
                     elif moiety_info['db-1'] > 0 and moiety_info['db-3'] > 0:
                         new_name = self.replace_two_pos_in_trimoieties(
-                                    num1=1, num2=3, old_name=old_name, 
-                                    info=moiety_info, 
-                                    old_db_1=old_db_1, new_db_1=new_db_1,
-                                    old_db_2=old_db_2, new_db_2=new_db_2)
+                            num1=1, num2=3, old_name=old_name, info=moiety_info, 
+                            old_db_1=old_db_1, new_db_1=new_db_1,
+                            old_db_2=old_db_2, new_db_2=new_db_2
+                        )
                     else: #moiety_info['db-2'] > 0 and moiety_info['db-3'] > 0:
                         new_name = self.replace_two_pos_in_trimoieties(
-                                    num1=2, num2=3, old_name=old_name, 
-                                    info=moiety_info, 
-                                    old_db_1=old_db_1, new_db_1=new_db_1,
-                                    old_db_2=old_db_2, new_db_2=new_db_2)
+                            num1=2, num2=3, old_name=old_name, info=moiety_info, 
+                            old_db_1=old_db_1, new_db_1=new_db_1,
+                            old_db_2=old_db_2, new_db_2=new_db_2
+                        )
                     set_resolved_bool(idx=idx, new_db=new_db_1, acyl_num=0)
                     set_resolved_bool(idx=idx, new_db=new_db_2, acyl_num=1)
                 elif db_1_changed:
                     if moiety_info['db-1'] > 0 and moiety_info['db-2'] > 0:
                         new_name = self.replace_one_pos_in_trimoieties(
-                                    num=1, old_name=old_name, info=moiety_info, 
-                                    old_db=old_db_1, new_db=new_db_1)
+                            num=1, old_name=old_name, info=moiety_info, 
+                            old_db=old_db_1, new_db=new_db_1
+                        )
                     elif moiety_info['db-1'] > 0 and moiety_info['db-3'] > 0:
                         new_name = self.replace_one_pos_in_trimoieties(
-                                    num=1, old_name=old_name, info=moiety_info, 
-                                    old_db=old_db_1, new_db=new_db_1)
+                            num=1, old_name=old_name, info=moiety_info, 
+                            old_db=old_db_1, new_db=new_db_1
+                        )
                     else: #moiety_info['db-2'] > 0 and moiety_info['db-3'] > 0:
                         new_name = self.replace_one_pos_in_trimoieties(
-                                    num=2, old_name=old_name, info=moiety_info, 
-                                    old_db=old_db_1, new_db=new_db_1)
+                            num=2, old_name=old_name, info=moiety_info, 
+                            old_db=old_db_1, new_db=new_db_1
+                        )
                     set_resolved_bool(idx=idx, new_db=new_db_1, acyl_num=0)
                 else: #db_2_changed
                     if moiety_info['db-1'] > 0 and moiety_info['db-2'] > 0:
                         new_name = self.replace_one_pos_in_trimoieties(
-                                    num=2, old_name=old_name, info=moiety_info, 
-                                    old_db=old_db_2, new_db=new_db_2)
+                            num=2, old_name=old_name, info=moiety_info, 
+                            old_db=old_db_2, new_db=new_db_2
+                        )
                     elif moiety_info['db-1'] > 0 and moiety_info['db-3'] > 0:
                         new_name = self.replace_one_pos_in_trimoieties(
-                                    num=3, old_name=old_name, info=moiety_info, 
-                                    old_db=old_db_2, new_db=new_db_2)
+                            num=3, old_name=old_name, info=moiety_info, 
+                            old_db=old_db_2, new_db=new_db_2
+                        )
                     else: #moiety_info['db-2'] > 0 and moiety_info['db-3'] > 0:
                         new_name = self.replace_one_pos_in_trimoieties(
-                                    num=3, old_name=old_name, info=moiety_info, 
-                                    old_db=old_db_2, new_db=new_db_2)
+                            num=3, old_name=old_name, info=moiety_info, 
+                            old_db=old_db_2, new_db=new_db_2
+                        )
                     set_resolved_bool(idx=idx, new_db=new_db_2, acyl_num=1)
             if unsaturated_moiety_num == 3:
                 if db_1_changed and db_2_changed and db_3_changed:
@@ -2024,54 +2088,72 @@ class MSRIDD_GUI(tk.Frame):
                         info=moiety_info, old_name=old_name, 
                         old_db_1=old_db_1, new_db_1=new_db_1, 
                         old_db_2=old_db_2, new_db_2=new_db_2,
-                        old_db_3=old_db_3, new_db_3=new_db_3)
+                        old_db_3=old_db_3, new_db_3=new_db_3
+                    )
                     set_resolved_bool(idx=idx, new_db=new_db_1, acyl_num=0)
                     set_resolved_bool(idx=idx, new_db=new_db_2, acyl_num=1)
                     set_resolved_bool(idx=idx, new_db=new_db_3, acyl_num=2)
                 elif db_1_changed and db_2_changed:
                     new_name = self.replace_two_pos_in_trimoieties(
-                                    num1=1, num2=2, old_name=old_name, 
-                                    info=moiety_info, 
-                                    old_db_1=old_db_1, new_db_1=new_db_1,
-                                    old_db_2=old_db_2, new_db_2=new_db_2)
+                        num1=1, num2=2, old_name=old_name, info=moiety_info, 
+                        old_db_1=old_db_1, new_db_1=new_db_1,
+                        old_db_2=old_db_2, new_db_2=new_db_2
+                    )
                     set_resolved_bool(idx=idx, new_db=new_db_1, acyl_num=0)
                     set_resolved_bool(idx=idx, new_db=new_db_2, acyl_num=1)
                 elif db_1_changed and db_3_changed:
                     new_name = self.replace_two_pos_in_trimoieties(
-                                    num1=1, num2=3, old_name=old_name, 
-                                    info=moiety_info, 
-                                    old_db_1=old_db_1, new_db_1=new_db_1,
-                                    old_db_2=old_db_3, new_db_2=new_db_3)
+                        num1=1, num2=3, old_name=old_name, info=moiety_info, 
+                        old_db_1=old_db_1, new_db_1=new_db_1,
+                        old_db_2=old_db_3, new_db_2=new_db_3
+                    )
                     set_resolved_bool(idx=idx, new_db=new_db_1, acyl_num=0)
                     set_resolved_bool(idx=idx, new_db=new_db_3, acyl_num=2)
                 elif db_2_changed and db_3_changed:
                     new_name = self.replace_two_pos_in_trimoieties(
-                                    num1=2, num2=3, old_name=old_name, 
-                                    info=moiety_info, 
-                                    old_db_1=old_db_2, new_db_1=new_db_2,
-                                    old_db_2=old_db_3, new_db_2=new_db_3)
+                        num1=2, num2=3, old_name=old_name, info=moiety_info, 
+                        old_db_1=old_db_2, new_db_1=new_db_2,
+                        old_db_2=old_db_3, new_db_2=new_db_3
+                    )
                     set_resolved_bool(idx=idx, new_db=new_db_2, acyl_num=1)
                     set_resolved_bool(idx=idx, new_db=new_db_3, acyl_num=2)
                 elif db_1_changed:
                     new_name = self.replace_one_pos_in_trimoieties(
-                                    num=1, old_name=old_name, info=moiety_info, 
-                                    old_db=old_db_1, new_db=new_db_1)
+                        num=1, old_name=old_name, info=moiety_info, 
+                        old_db=old_db_1, new_db=new_db_1
+                    )
                     set_resolved_bool(idx=idx, new_db=new_db_1, acyl_num=0)
                 elif db_2_changed:
                     new_name = self.replace_one_pos_in_trimoieties(
-                                    num=2, old_name=old_name, info=moiety_info, 
-                                    old_db=old_db_2, new_db=new_db_2)
+                        num=2, old_name=old_name, info=moiety_info, 
+                        old_db=old_db_2, new_db=new_db_2
+                    )
                     set_resolved_bool(idx=idx, new_db=new_db_2, acyl_num=1)
                 else: #db_3_changed
                     new_name = self.replace_one_pos_in_trimoieties(
-                                    num=3, old_name=old_name, info=moiety_info, 
-                                    old_db=old_db_3, new_db=new_db_3)
+                        num=3, old_name=old_name, info=moiety_info, 
+                        old_db=old_db_3, new_db=new_db_3
+                    )
                     set_resolved_bool(idx=idx, new_db=new_db_3, acyl_num=2)
         else:
             new_name = old_name
         return new_name
 
     def replace_one_pos_in_moiety(self, old_name, info, old_db, new_db):
+        """ Update OAD result name in case that C=C positions in mono-moiety 
+            is changed
+
+        Args:
+            old_name (str): previous metabolite name
+            info (dict): {
+                'chain-1~3': carbon number, 'db-1~3': double bond number
+            }
+            old_db (str): Annotated C=C positions
+            new_db (str): Newly selected C=C positions
+        
+        Returns:
+            new_name (str): new metabolite name whose C=C positions are updated
+        """
         chain, db = 'chain-1', 'db-1'
         moiety = f'{info[chain]}:{info[db]}'
         sign = 'one'
@@ -2090,6 +2172,20 @@ class MSRIDD_GUI(tk.Frame):
         return new_name
 
     def replace_one_pos_in_dimoieties(self, num, old_name, info, old_db, new_db):
+        """ Update OAD result name in case that one combination of C=C positions
+            in two-moieties is changed
+
+        Args:
+            old_name (str): previous metabolite name
+            info (dict): {
+                'chain-1~3': carbon number, 'db-1~3': double bond number
+            }
+            old_db (str): Annotated C=C positions
+            new_db (str): Newly selected C=C positions
+        
+        Returns:
+            new_name (str): new metabolite name whose C=C positions are updated
+        """
         chain_1, db_1 = 'chain-1', 'db-1'
         chain_2, db_2 = 'chain-2', 'db-2'
         moiety_1 = f'{info[chain_1]}:{info[db_1]}'
@@ -2120,8 +2216,21 @@ class MSRIDD_GUI(tk.Frame):
         new_name = new_name.replace('one', '', 1).replace('two', '', 1)
         return new_name
 
-    def replace_one_pos_in_trimoieties(
-        self, num, old_name, info, old_db, new_db):
+    def replace_one_pos_in_trimoieties(self, num, old_name, info, old_db, new_db):
+        """ Update OAD result name in case that one combination of C=C positions
+            in three-moieties is changed
+
+        Args:
+            old_name (str): previous metabolite name
+            info (dict): {
+                'chain-1~3': carbon number, 'db-1~3': double bond number
+            }
+            old_db (str): Annotated C=C positions
+            new_db (str): Newly selected C=C positions
+        
+        Returns:
+            new_name (str): new metabolite name whose C=C positions are updated
+        """
         chain_1, db_1 = 'chain-1', 'db-1'
         chain_2, db_2 = 'chain-2', 'db-2'
         chain_3, db_3 = 'chain-3', 'db-3'
@@ -2165,8 +2274,22 @@ class MSRIDD_GUI(tk.Frame):
         new_name = new_name.replace('one','',1).replace('two','',1).replace('three','',1)
         return new_name
 
-    def replace_two_pos_in_dimoieties(
-        self, old_name, info, old_db_1, new_db_1, old_db_2, new_db_2):
+    def replace_two_pos_in_dimoieties(self, old_name, info, old_db_1, new_db_1, 
+        old_db_2, new_db_2):
+        """ Update OAD result name in case that two combinations of C=C positions
+            in two-moieties is changed
+
+        Args:
+            old_name (str): previous metabolite name
+            info (dict): {
+                'chain-1~3': carbon number, 'db-1~3': double bond number
+            }
+            old_db_1~2 (str): Annotated C=C positions
+            new_db_1~2 (str): Newly selected C=C positions
+        
+        Returns:
+            new_name (str): new metabolite name whose C=C positions are updated
+        """
         chain_1, db_1 = 'chain-1', 'db-1'
         chain_2, db_2 = 'chain-2', 'db-2'
         moiety_1 = f'{info[chain_1]}:{info[db_1]}'
@@ -2198,6 +2321,20 @@ class MSRIDD_GUI(tk.Frame):
 
     def replace_two_pos_in_trimoieties(self, num1, num2, old_name, 
         info, old_db_1, new_db_1, old_db_2, new_db_2):
+        """ Update OAD result name in case that two combinations of C=C positions
+            in three-moieties is changed
+
+        Args:
+            old_name (str): previous metabolite name
+            info (dict): {
+                'chain-1~3': carbon number, 'db-1~3': double bond number
+            }
+            old_db_1~2 (str): Annotated C=C positions
+            new_db_1~2 (str): Newly selected C=C positions
+        
+        Returns:
+            new_name (str): new metabolite name whose C=C positions are updated
+        """
         chain_1, db_1 = 'chain-1', 'db-1'
         chain_2, db_2 = 'chain-2', 'db-2'
         chain_3, db_3 = 'chain-3', 'db-3'
@@ -2268,6 +2405,20 @@ class MSRIDD_GUI(tk.Frame):
 
     def replace_three_pos_in_trimoieties(self, old_name, info, 
         old_db_1, new_db_1, old_db_2, new_db_2, old_db_3, new_db_3):
+        """ Update OAD result name in case that three combinations of C=C positions
+            in three-moieties is changed
+
+        Args:
+            old_name (str): previous metabolite name
+            info (dict): {
+                'chain-1~3': carbon number, 'db-1~3': double bond number
+            }
+            old_db_1~3 (str): Annotated C=C positions
+            new_db_1~3 (str): Newly selected C=C positions
+        
+        Returns:
+            new_name (str): new metabolite name whose C=C positions are updated
+        """
         chain_1, db_1 = 'chain-1', 'db-1'
         chain_2, db_2 = 'chain-2', 'db-2'
         chain_3, db_3 = 'chain-3', 'db-3'
@@ -2312,13 +2463,23 @@ class MSRIDD_GUI(tk.Frame):
         return new_name
 
     def re_const_oad_res_dict(self, idx, moiety_num, rank, old_db, new_db):
-        unresolved_d = {'Positions': '', 'N-description': 'Unresolved',
-                        'Score': '###', 'Ratio sum': '###', 'Presence': '###',
-                        'Notice': 'Unresolved', 
-                        'Measured peaks': [[0, 0, 0]], 
-                        'Ref peaks': [['', 0, 0, 0]], 
-                        'Peaks dict': {'none': [0, 0, 0, 0, 0]}
-                        }
+        """ Re-construct result data preserved in class object
+
+        Args:
+            idx (int): index
+            moiety_num (str): positional number (1~3) of moiety
+            rank (str): ranking of currently selected candidate
+            old_db (str): Annotated C=C positions
+            new_db (str): Newly selected C=C positions
+        """
+        unresolved_d = {
+            'Positions': '', 'N-description': 'Unresolved',
+            'Score': '###', 'Ratio sum': '###', 'Presence': '###',
+            'Notice': 'Unresolved', 
+            'Measured peaks': [[0, 0, 0]], 
+            'Ref peaks': [['', 0, 0, 0]], 
+            'Peaks dict': {'none': [0, 0, 0, 0, 0]}
+        }
         moiety = f'Moiety-{moiety_num}'
         old_no1 = self.oad_result_dict[idx][moiety][0].copy()
         new_no1 = self.oad_result_dict[idx][moiety][rank].copy()
@@ -2355,6 +2516,12 @@ class MSRIDD_GUI(tk.Frame):
         self.oad_result_dict[idx][moiety] = new_d
 
     def update_result_table(self, target_idx):
+        """ Update metabolite table to reflect user performed modification
+            (C=C positions and comments)
+
+        Args:
+            target_idx (int): index
+        """
         self.result_table_tree.delete(*self.result_table_tree.get_children())
         switch = self.show_only_solved_mol.get()
         ion_v_col = 'pmol/mg tissue' if self.normalized_data else 'Height'
@@ -2362,7 +2529,10 @@ class MSRIDD_GUI(tk.Frame):
         if switch:
             count = 0
             for i, (row, df) in enumerate(self.target_table.iterrows()):
-                # tree = ['ID', 'RT', 'm/z', 'm/z type', 'Solved','Result name', 'Height', 'Ontology', 'Comment']
+                # tree = [
+                #   'ID', 'RT', 'm/z', 'm/z type', 'Solved','Result name', 
+                #   'Height', 'Ontology', 'Comment'
+                # ]
                 solved = df['Solved level']
                 if solved == 'None': continue
                 idx = df['ID']
@@ -2376,15 +2546,22 @@ class MSRIDD_GUI(tk.Frame):
                 comment = df['User comment']
                 tag = 'colored' if tag == 'white' else 'white'
                 count += 1
-                iid = self.result_table_tree.insert("", "end", tags=tag,
-                        values=[idx, rt, mz, mz_type, solved, result_name, 
-                                data_from, ion_v, ontology, comment])
+                iid = self.result_table_tree.insert(
+                    "", "end", tags=tag,
+                    values=[
+                        idx, rt, mz, mz_type, solved, result_name, data_from, 
+                        ion_v, ontology, comment
+                    ]
+                )
                 if idx == target_idx:
                     selected_iid = iid
             new_label = f'Result table (molecules={count})'
         else:
             for i, (row, df) in enumerate(self.target_table.iterrows()):
-                # tree = ['ID', 'RT', 'm/z', 'm/z type', 'Solved','Result name', 'Height', 'Ontology', 'Comment']
+                # tree = [
+                #   'ID', 'RT', 'm/z', 'm/z type', 'Solved','Result name', 
+                #   'Height', 'Ontology', 'Comment'
+                # ]
                 idx = df['ID']
                 rt = math_floor(df['RT(min)'], 3)
                 mz = df['Precise m/z']
@@ -2396,9 +2573,13 @@ class MSRIDD_GUI(tk.Frame):
                 ontology = df['Ontology']
                 comment = df['User comment']
                 tag = 'colored' if tag == 'white' else 'white'
-                iid = self.result_table_tree.insert("", "end", tags=tag,
-                        values=[idx, rt, mz, mz_type, solved, result_name, 
-                                data_from, ion_v, ontology, comment])
+                iid = self.result_table_tree.insert(
+                    "", "end", tags=tag,
+                    values=[
+                        idx, rt, mz, mz_type, solved, result_name, data_from, 
+                        ion_v, ontology, comment
+                    ]
+                )
                 if idx == target_idx:
                     selected_iid = iid
             new_label = f'Result table (molecules={i+1})'
@@ -2414,6 +2595,8 @@ class MSRIDD_GUI(tk.Frame):
         self.result_table_tree.bind("<<TreeviewSelect>>", self.data_setting)
 
     def enter_comment_on_result_table(self):
+        """ Put user defined comments in comment area
+        """
         entry_comment = self.comment_entry.get()
         if entry_comment != "":
             idx = self.selected_idx
@@ -2426,6 +2609,11 @@ class MSRIDD_GUI(tk.Frame):
             self.update_result_table(idx)
 
     def update_msms_fig(self, cid_info):
+        """ Update OAD-MS/MS spectrum via newly selected C=C positions
+
+        Args:
+            cid_info (dict): dictionary containing detected CID fragment ions
+        """
         #region CID result dict structure
         # cid_dict = {'Lipid subclass': {'Glycine': [ref_mz, measured_mz, intensity, ratio, ppm],
         #                                'Presence': 50.00},
@@ -2484,10 +2672,14 @@ class MSRIDD_GUI(tk.Frame):
         ax.set_yticklabels(['0', '50', '100'])
         #endregion
         #region Plotting measured MS/MS
-        ax.bar(total_fig_x, total_fig_y, color=line_color, 
-            width=bar_width, linewidth=0, zorder=1)
-        ax.text(precursor_mz, 100, str(precursor_mz), 
-            fontsize=precursor_mz_font_size, ha='center', va='bottom')
+        ax.bar(
+            total_fig_x, total_fig_y, color=line_color, 
+            width=bar_width, linewidth=0, zorder=1
+        )
+        ax.text(
+            precursor_mz, 100, str(precursor_mz), 
+            fontsize=precursor_mz_font_size, ha='center', va='bottom'
+        )
         def check_near_txt(others, mz, ratio):
             space = bar_width if ratio > 10 else 0
             for other in others:
@@ -2503,8 +2695,10 @@ class MSRIDD_GUI(tk.Frame):
                     x_list.append(v[1]), y_list.append(v[3])
                     info_list.append([key, v[1], v[2], v[3], v[4]])
                     #['Glycine', measured_mz, intensity, ratio, ppm]
-            ax.bar(x_list, y_list, color=cid_color, width=bar_width, 
-                linewidth=0, zorder=2)
+            ax.bar(
+                x_list, y_list, color=cid_color, width=bar_width, 
+                linewidth=0, zorder=2
+            )
             for li in info_list:
                 annotation = 'm/z {}, ppm={}, {}'.format(li[1], li[4], li[0])
                 space = check_near_txt(others, li[1], li[3])
@@ -2518,27 +2712,45 @@ class MSRIDD_GUI(tk.Frame):
                     x_list.append(v[1]), y_list.append(v[3])
                     info_list.append([key, v[1], v[2], v[3], v[4]])
                     #['Glycine', measured_mz, intensity, ratio, ppm]
-            ax.bar(x_list, y_list, color=cid_color, width=bar_width, 
-                linewidth=0, zorder=2)
+            ax.bar(
+                x_list, y_list, color=cid_color, width=bar_width, 
+                linewidth=0, zorder=2
+            )
             for li in info_list:
                 annotation = 'm/z {}, ppm={}, {}'.format(li[1], li[4], li[0])
                 space = check_near_txt(others, li[1], li[3])
-                ax.text(li[1]-space, 10, annotation, fontsize=frag_mz_font_size, 
-                color=cid_color, va='baseline', rotation=90, rotation_mode='anchor')
+                ax.text(
+                    li[1]-space, 10, annotation, fontsize=frag_mz_font_size, 
+                    color=cid_color, va='baseline', rotation=90, 
+                    rotation_mode='anchor'
+                )
                 others.append(li[1])
         #endregion
         #region matplotlib regend setting
         msms_label_measured = '$\it{Measurement}$'
         ax.text(x_min+5, 100, msms_label_measured, fontsize=small_font_size)
         y_label = '$\it{Relative}$' + ' ' + '$\it{abundance}$'
-        ax.set_xlabel('$\it{m/z}$', fontsize=x_label_font_size, labelpad=tick_pad)
+        ax.set_xlabel(
+            '$\it{m/z}$', fontsize=x_label_font_size, labelpad=tick_pad
+        )
         ax.set_ylabel(y_label, fontsize=y_label_font_size, labelpad=tick_pad)
         # fig.tight_layout()
-        self.centoird_msms_canvas = FigureCanvasTkAgg(fig, master=self.centroid_msms_frame)
-        self.centoird_msms_canvas.get_tk_widget().place(relx=0, rely=0, relwidth=1, relheight=1)
+        self.centoird_msms_canvas = FigureCanvasTkAgg(
+            fig, master=self.centroid_msms_frame
+        )
+        self.centoird_msms_canvas.get_tk_widget().place(
+            relx=0, rely=0, relwidth=1, relheight=1
+        )
         #endregion
 
     def update_oad_msms_fig_with_ref(self, dict_1, dict_2, dict_3):
+        """ Update OAD-MS/MS spectrum via newly selected C=C positions
+
+        Args:
+            dict_1, dict_2, dict_3 (dict): 
+                dictionaries containing reference OAD fragment ions for
+                each unsaturated moiety
+        """
         msms_df = self.temp_msms_df
         lipid_info = self.temp_lipid_info
         graph_info = self.temp_graph_info['OAD']
@@ -2685,6 +2897,7 @@ class MSRIDD_GUI(tk.Frame):
         self.measured_vs_ref_msms_canvas.get_tk_widget().place(relx=0, rely=0, relwidth=1, relheight=1)
         #endregion
 
+    #region Not used function
     def matplotlib_test1(self, parent):
         values = [20, 34, 30, 35, 27]
         x_range = range(0, len(values))
@@ -2694,7 +2907,9 @@ class MSRIDD_GUI(tk.Frame):
         fig.tight_layout()
         self.centoird_msms_canvas = FigureCanvasTkAgg(fig, master=parent)
         self.centoird_msms_canvas.get_tk_widget().place(relx=0, rely=0, relwidth=1, relheight=1)
+    #endregion
 
+    #region Not used function
     def matplotlib_test2(self, parent):
         values = [20, 34, 30, 35, 27]
         x_range = range(0, len(values))
@@ -2704,21 +2919,27 @@ class MSRIDD_GUI(tk.Frame):
         fig.tight_layout()
         self.measured_vs_ref_msms_canvas = FigureCanvasTkAgg(fig, master=parent)
         self.measured_vs_ref_msms_canvas.get_tk_widget().place(relx=0, rely=0, relwidth=1, relheight=1)
+    #endregion
 
     #endregion
 
     #region Re-analysis
     def set_re_analysis_condition(self):
+        """ Construct Re-analysis setting window and set commands to widgets
+        """
         focused_item = self.get_focused_item()
         metabolite_name = focused_item[5]
         self.re_analysis_win = ReAnalysisWindow(
-            master=self.master, name=metabolite_name, info=self.temp_lipid_info)
+            master=self.master, name=metabolite_name, info=self.temp_lipid_info
+        )
         self.re_analysis_win.start_btn["command"] \
             = self.check_re_analysis_condition
         self.re_analysis_win.close_btn["command"] \
             = self.re_analysis_win.close_window
 
     def check_re_analysis_condition(self):
+        """ Check user inputted C=C positions
+        """
         content1 = self.re_analysis_win.text1.get('1.0', 'end -1c')
         content2 = self.re_analysis_win.text2.get('1.0', 'end -1c')
         content3 = self.re_analysis_win.text3.get('1.0', 'end -1c')
@@ -2935,6 +3156,14 @@ class MSRIDD_GUI(tk.Frame):
                 "Empty error", """Please set C=C positional candidates.""")
 
     def extract_dbs(self, text):
+        """ Convert text format of C=C positions to tuple 
+
+        Args:
+            text (str): C=C positions
+
+        Returns:
+            dbs_list (tuple): tuple of C=C positions
+        """
         if text:
             comb_list = text.split('\n')
             dbs_list = [re.findall(r'\d+', comb) for comb in comb_list]
@@ -2945,26 +3174,45 @@ class MSRIDD_GUI(tk.Frame):
             return []
 
     def start_re_analysis(self, dbs_1, dbs_2, dbs_3):
+        """ Start re-analysis and construct pop-up window while processing
+
+        Args:
+            dbs_1, dbs_2, dbs_3 (tuple): C=C positions
+        """
         thread_1 = threading.Thread(
-            target=self.re_analysis, args=(dbs_1, dbs_2, dbs_3))
+            target=self.re_analysis, args=(dbs_1, dbs_2, dbs_3)
+        )
         thread_2 = threading.Thread(
-            target=self.create_re_analysis_popup_win)
+            target=self.create_re_analysis_popup_win
+        )
         thread_1.start()
         thread_2.start()
 
     def create_re_analysis_popup_win(self):
-        self.temp_popup = PopUpWindow(master=self.master,
-            title='Re-analysis in progress', message='Re-analizing ...')
+        """ Construct pop-up window while re-analysis processing
+        """
+        self.temp_popup = PopUpWindow(
+            master=self.master,
+            title='Re-analysis in progress', message='Re-analizing ...'
+        )
 
+    #region Not used function
     def create_re_analysis_prgbar_window(self):
-        self.temp_prgbar = ProgressBar(self.master,
-            title="Re-analysis in progress", detail="--- Re analizing ---")
+        self.temp_prgbar = ProgressBar(
+            self.master,
+            title="Re-analysis in progress", detail="--- Re analizing ---"
+        )
+    #endregion
 
     def re_analysis(self, dbs_1, dbs_2, dbs_3):
+        """ Re-analysis OAD-MS/MS spectrum against user defined C=C positions
+
+        Args:
+            dbs_1, dbs_2, dbs_3 (tuple): C=C positions
+        """
         ontology = self.temp_lipid_info['Ontology']
         ref_mz = self.temp_lipid_info['Ref precursor Mz']
-        ms_tol = math_floor(
-            self.ms_tolerance_ppm*ref_mz/(1000*1000), 6)
+        ms_tol = math_floor(self.ms_tolerance_ppm*ref_mz/(1000*1000), 6)
         db_in_SPB = self.temp_lipid_info['Unsaturated sphingobase']
         deuterium = 0
         idx = int(self.get_focused_item()[0])
@@ -3032,36 +3280,54 @@ class MSRIDD_GUI(tk.Frame):
                     sph_set=sph_set)
                 score_dict_3[0]['N-description'] = n_description_3
                 key3 = self.set_re_analysis_result(
-                    re_analysis_moiety=3, idx=idx, score_d=score_dict_3)
+                    re_analysis_moiety=3, idx=idx, score_d=score_dict_3
+                )
             # self.re_arrange_oad_dict(idx=idx, key=key3)
         auto_magnification = self.graph_dict[idx]['OAD']['Magnification']
         self.graph_dict[idx]['OAD'] = ReAnalyzer.set_oad_graph_dict_value(
             oad_dict=self.oad_result_dict[idx], lipid_info=self.temp_lipid_info,
-            auto_magnification=auto_magnification)
+            auto_magnification=auto_magnification
+        )
         self.temp_graph_info = self.graph_dict[idx]
         self.update_db_trees(
-            result_dict=self.oad_result_dict[idx], masstable=False)
+            result_dict=self.oad_result_dict[idx], masstable=False
+        )
         self.focus_and_select_db_trees()
         self.temp_popup.close_window()
 
+    #region Not used function
     def re_arrange_oad_dict(self, idx, key):
-        unresolved_d = {'Positions': '', 'N-description': 'Unresolved',
-                        'Score': '###', 'Ratio sum': '###', 'Presence': '###',
-                        'Notice': 'Unresolved', 
-                        'Measured peaks': [[0, 0, 0]], 
-                        'Ref peaks': [['', 0, 0, 0]], 
-                        'Peaks dict': {'none': [0, 0, 0, 0, 0]}
-                        }
+        unresolved_d = {
+            'Positions': '', 'N-description': 'Unresolved',
+            'Score': '###', 'Ratio sum': '###', 'Presence': '###',
+            'Notice': 'Unresolved', 
+            'Measured peaks': [[0, 0, 0]], 
+            'Ref peaks': [['', 0, 0, 0]], 
+            'Peaks dict': {'none': [0, 0, 0, 0, 0]}
+        }
         moiety_d = self.oad_result_dict[idx][key].copy()
         removed = moiety_d.pop('Determined db')
-        temp_d = {i: v for i, (rank, v) in enumerate(moiety_d.items())
-                  if v['N-description'] != 'Unresolved'}
+        temp_d = {
+            i: v for i, (rank, v) in enumerate(moiety_d.items())
+            if v['N-description'] != 'Unresolved'
+        }
         new_d = {j: v for j, (rank, v) in enumerate(temp_d.items())}
         new_d[len(new_d)] = unresolved_d
         new_d['Determined db'] = new_d[0]
         self.oad_result_dict[idx][key] = new_d
+    #endregion
 
     def set_re_analysis_result(self, re_analysis_moiety, idx, score_d):
+        """ Re-arrange result data dict
+
+        Args:
+            re_analysis_moiety (int): positional number of moiety (1~3)
+            idx (int): index
+            score_d (dict) : annotation result data as dictionary
+
+        Returns:
+            key (str): f'Moiety-{re_analysis_moiety}'
+        """
         unsaturated_moiety_num = self.temp_lipid_info['Unsaturated moiety']
         moiety_info = self.temp_lipid_info['Each moiety info']
         if unsaturated_moiety_num == 1:
@@ -3090,6 +3356,14 @@ class MSRIDD_GUI(tk.Frame):
         return key
 
     def check_ion_lacking_pos(self, re_anal_bool):
+        """ Check C=C positions that lack diagnostic ion 
+            and add asterisk mark to C=C positions
+
+        Args:
+            re_anal_bool (dict): {
+                C=C positions(tuple): bool of whether each C=C position resolved
+            }
+        """
         for key, bools in re_anal_bool.items():
             if len(key) == 1:
                 n_description = f'n-{key[0]}*'
