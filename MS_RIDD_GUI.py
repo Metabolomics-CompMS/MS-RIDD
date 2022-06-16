@@ -38,6 +38,9 @@ from Spectrum_analyzer import BatchAnalyzer
 IconPath = 'image/MSRIDD_ICON.png'
 
 class MSRIDD_GUI(tk.Frame):
+    """ Definition of class that generates graphical user interface 
+        of MS-RIDD software
+    """
     def __init__(self, master):
         super().__init__(master)
         self.master.attributes('-topmost', False)
@@ -68,6 +71,8 @@ class MSRIDD_GUI(tk.Frame):
             if elm[:2] != ('!disabled', '!selected')]
 
     def create_menu(self):
+        """ Construct menu (tk.Menu) of MS-RIDD software
+        """
         self.menubar = tk.Menu(self.master)
         self.filemenu = tk.Menu(self.menubar, tearoff=0)
         self.newprjmenu = tk.Menu(self.filemenu, tearoff=0)
@@ -99,12 +104,23 @@ class MSRIDD_GUI(tk.Frame):
         self.master.config(menu=self.menubar)
 
     def main_window_geometry(self, win):
+        """ Definition of window geometry for graphical user interface 
+            of MS-RIDD software
+        Args:
+            win (class object): MSRIDD_GUI (tk.Frame)
+        """
         width = int(win.winfo_screenwidth()*0.95)
         height = int(win.winfo_screenheight()*0.9)
         x = (win.winfo_screenwidth() // 2) - (width // 2)
         win.geometry('{}x{}+{}+{}'.format(width, height, x, 0))
 
     def center_position(self, win, width, height):
+        """ Set window geometry of MS-RIDD software to center position
+        Args:
+            win (class object): MSRIDD_GUI (tk.Frame)
+            width (int) : Width of Monitor
+            height (int): Height of Monitor
+        """
         x = (win.winfo_screenwidth() // 2) - (width // 2)
         y = (win.winfo_screenheight() // 2) - (height // 2)
         win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
@@ -114,6 +130,8 @@ class MSRIDD_GUI(tk.Frame):
 
     #region Main widgets
     def create_main_widgets(self):
+        """ Construct widgets on main window of MS-RIDD software
+        """
         # Result table
         self.left_wrap_lebel = tk.StringVar()
         self.left_wrap_lebel.set("Result table")
@@ -202,9 +220,16 @@ class MSRIDD_GUI(tk.Frame):
             relx=0.37, rely=0.515, relwidth=0.625, relheight=0.48)
 
     def recreate_main_widgets(self):
+        """ Re-constuct widgets on main window of MS-RIDD software 
+            for next analysis
+        """
         # Result table
-        self.result_table_pwin = ttk.PanedWindow(self.left_wrap_frame, orient="vertical") 
-        self.result_table_pwin.place(relx=0, rely=0, relwidth=0.97, relheight=0.98)
+        self.result_table_pwin = ttk.PanedWindow(
+            self.left_wrap_frame, orient="vertical"
+        ) 
+        self.result_table_pwin.place(
+            relx=0, rely=0, relwidth=0.97, relheight=0.98
+        )
         # C=C candidates table
         self.db_1_frame = tk.Frame(self.db_candidates_frame)
         self.db_2_frame = tk.Frame(self.db_candidates_frame)
@@ -219,23 +244,33 @@ class MSRIDD_GUI(tk.Frame):
         self.db_2_frame.place(relx=0.34, rely=0, relwidth=0.33, relheight=1)
         self.db_3_frame.place(relx=0.67, rely=0, relwidth=0.33, relheight=1)
         # Matched OAD fragment ions
-        self.matched_fragments_pwin = ttk.PanedWindow(self.matched_fragments_frame, orient="vertical") 
-        self.matched_fragments_pwin.place(relx=0, rely=0, relwidth=0.99, relheight=1)
+        self.matched_fragments_pwin = ttk.PanedWindow(
+            self.matched_fragments_frame, orient="vertical"
+        ) 
+        self.matched_fragments_pwin.place(
+            relx=0, rely=0, relwidth=0.99, relheight=1
+        )
 
     def create_result_table_tree(self, parent):
+        """ Construct metabolite table with ID, RT, m/z, m/z type, Solved level,
+            Metabolite name, Data from, Concentraion or Ion abundance, and Comment.
+        """
         self.result_table_tree = ttk.Treeview(parent)
         win_w = parent.winfo_width()
         w_unit = int(win_w/33)
         ion_v_col = 'pmol/mg tissue' if self.normalized_data else 'Height'
         self.result_table_tree_column = [
             'ID', 'RT', 'm/z', 'm/z type', 'Solved','Result name', 
-            'Data from', ion_v_col, 'Ontology', 'Comment']
+            'Data from', ion_v_col, 'Ontology', 'Comment'
+        ]
         self.result_table_tree_column_width = [
             w_unit*2, w_unit*2, w_unit*3, w_unit*3, w_unit*3, w_unit*15, 
-            w_unit*3, w_unit*3, w_unit*3, w_unit*8]
+            w_unit*3, w_unit*3, w_unit*3, w_unit*8
+        ]
         self.result_table_tree["column"] = self.result_table_tree_column
         self.result_table_tree["show"] = "headings"
-        for i, (colname, width) in enumerate(zip(self.result_table_tree_column, self.result_table_tree_column_width)):
+        for i, (colname, width) in enumerate(
+            zip(self.result_table_tree_column, self.result_table_tree_column_width)):
             self.result_table_tree.heading(i, text=colname)
             self.result_table_tree.column(i, width=width)
         h_scrollbar = tk.Scrollbar(self.left_wrap_frame, orient=tk.HORIZONTAL,
@@ -249,11 +284,14 @@ class MSRIDD_GUI(tk.Frame):
         self.result_table_tree.focus_set()
 
     def create_db_1_table_tree(self, parent):
+        """ Construct candidates table of C=C positions for moiety-1
+        """
         self.db_1_tree = ttk.Treeview(parent)
         win_w = parent.winfo_width()
         w_unit = int(win_w/6)
-        self.db_1_tree_column = ['Rank', 'C=C moiety-1', 'Score', 'Presence', 
-                                 'Rel. Int']
+        self.db_1_tree_column = [
+            'Rank', 'C=C moiety-1', 'Score', 'Presence', 'Rel. Int'
+        ]
         self.db_1_tree_column_width = [w_unit, w_unit*2, w_unit, w_unit, w_unit]
         self.db_1_tree["column"] = self.db_1_tree_column
         self.db_1_tree["show"] = "headings"
@@ -268,11 +306,14 @@ class MSRIDD_GUI(tk.Frame):
         self.db_1_tree.focus_set()
 
     def create_db_2_table_tree(self, parent):
+        """ Construct candidates table of C=C positions for moiety-2
+        """
         self.db_2_tree = ttk.Treeview(parent)
         win_w = parent.winfo_width()
         w_unit = int(win_w/6)
-        self.db_2_tree_column = ['Rank', 'C=C moiety-2', 'Score', 'Presence', 
-                                 'Rel. Int']
+        self.db_2_tree_column = [
+            'Rank', 'C=C moiety-2', 'Score', 'Presence', 'Rel. Int'
+        ]
         self.db_2_tree_column_width = [w_unit, w_unit*2, w_unit, w_unit, w_unit]
         self.db_2_tree["column"] = self.db_2_tree_column
         self.db_2_tree["show"] = "headings"
@@ -287,11 +328,14 @@ class MSRIDD_GUI(tk.Frame):
         self.db_2_tree.focus_set()
 
     def create_db_3_table_tree(self, parent):
+        """ Construct candidates table of C=C positions for moiety-3
+        """
         self.db_3_tree = ttk.Treeview(parent)
         win_w = parent.winfo_width()
         w_unit = int(win_w/6)
-        self.db_3_tree_column = ['Rank', 'C=C moiety-3', 'Score', 'Presence', 
-                                 'Rel. Int']
+        self.db_3_tree_column = [
+            'Rank', 'C=C moiety-3', 'Score', 'Presence', 'Rel. Int'
+        ]
         self.db_3_tree_column_width = [w_unit, w_unit*2, w_unit, w_unit, w_unit]
         self.db_3_tree["column"] = self.db_3_tree_column
         self.db_3_tree["show"] = "headings"
@@ -306,13 +350,19 @@ class MSRIDD_GUI(tk.Frame):
         self.db_3_tree.focus_set()
 
     def create_matched_fragments_table_tree(self, parent):
+        """ Construct mass table of OAD-MS/MS with m/z, Intensity, Ratio(%), 
+            Delta, and properties (Reference m/z, ppm, OAD NL Type) 
+            of each unsaturated moiety
+        """
         self.matched_fragments_tree = ttk.Treeview(parent)
-        self.matched_fragments_tree_column = ['m/z', 'Intensity', 'Ratio(%)', 'Delta', 
-                                              'Ref m/z1', 'ppm1', 'Type1',
-                                              'Ref m/z2', 'ppm2', 'Type2',
-                                              'Ref m/z3', 'ppm3', 'Type3']
-        self.matched_fragments_tree_column_width = [10, 10, 10, 10,
-                                                    10, 4, 100, 10, 4, 100, 10, 4, 100]
+        self.matched_fragments_tree_column = [
+            'm/z', 'Intensity', 'Ratio(%)', 'Delta', 
+            'Ref m/z1', 'ppm1', 'Type1', 'Ref m/z2', 'ppm2', 'Type2',
+            'Ref m/z3', 'ppm3', 'Type3'
+        ]
+        self.matched_fragments_tree_column_width = [
+            10, 10, 10, 10, 10, 4, 100, 10, 4, 100, 10, 4, 100
+        ]
         self.matched_fragments_tree["column"] = self.matched_fragments_tree_column
         self.matched_fragments_tree["show"] = "headings"
         for i, (colname, width) in enumerate(zip(
@@ -320,13 +370,17 @@ class MSRIDD_GUI(tk.Frame):
             self.matched_fragments_tree_column_width)):
             self.matched_fragments_tree.heading(i, text=colname)
             self.matched_fragments_tree.column(i, width=width)
-        v_scrollbar = tk.Scrollbar(self.matched_fragments_frame, orient=tk.VERTICAL,
-            command=self.matched_fragments_tree.yview)
+        v_scrollbar = tk.Scrollbar(
+            self.matched_fragments_frame, orient=tk.VERTICAL,
+            command=self.matched_fragments_tree.yview
+        )
         self.matched_fragments_tree.configure(yscrollcommand=v_scrollbar.set)
         v_scrollbar.pack(side=tk.RIGHT, fill='y')
         self.matched_fragments_tree.focus_set()
     
     def disable_widgets(self):
+        """ Lock the widgets on main window while analysis
+        """
         filenmenu = ['Save']
         for menu in filenmenu:
             self.filemenu.entryconfigure(menu, state='disabled')
@@ -341,6 +395,8 @@ class MSRIDD_GUI(tk.Frame):
         self.show_only_solved_molcheckbtn['state'] = tk.DISABLED
 
     def activate_widgets(self):
+        """ Unlock the widgets on main window after analysis
+        """
         filenmenu = ['Save']
         for menu in filenmenu:
             self.filemenu.entryconfigure(menu, state='normal')
@@ -357,10 +413,15 @@ class MSRIDD_GUI(tk.Frame):
 
     #region Batch analysis
     def create_batch_setwin(self):
+        """ Construct a setting window for batch analysis
+        """
         self.batch_setwin = BatchSettingWindow(master=self.master)
         self.batch_setwin.finish_btn["command"] = self.check_batch_paths
 
     def check_batch_paths(self):
+        """ Check the data paths (project path, alignment data path, 
+            peakid data path, and peaklist data paths) for batch analysis
+        """
         prj_path = self.batch_setwin.prj_path_entry.get().rsplit('/', 1)[0]
         alignment_path = self.batch_setwin.alignment_entry.get()
         peakid_path = self.batch_setwin.peakid_entry.get()
@@ -390,6 +451,8 @@ class MSRIDD_GUI(tk.Frame):
             thread_2.start()
 
     def start_batch_analysis(self):
+        """ Set the parameters and start batch analysis
+        """
         start = time.time()
         user_def_path = self.batch_setwin.prj_path_entry.get()
         postfix = '_analysis_table.pkl'
@@ -457,6 +520,8 @@ class MSRIDD_GUI(tk.Frame):
 
     #region Single analysis
     def create_setting_window(self):
+        """ Construct a setting window for single analysis
+        """
         self.setting_window = tk.Toplevel(self.master)
         self.setting_window.attributes('-topmost', False)
         self.center_position(self.setting_window, width=690, height=220)
@@ -470,6 +535,8 @@ class MSRIDD_GUI(tk.Frame):
         )
 
     def create_setting_widgets(self):
+        """ Construct widgets on a setting window for single analysis
+        """
         # Project path
         prj_entry_label = ttk.Label(
             self.setting_window, text="Project file path :")
@@ -541,6 +608,8 @@ class MSRIDD_GUI(tk.Frame):
         self.finish_btn.place(x=580, y=168) 
 
     def get_filepath(self):
+        """ Get project folder path for single analysis
+        """
         old_path = self.prj_path_entry.get()
         new_path = filedialog.askdirectory(title="Select project folder")
         if new_path == "":
@@ -551,6 +620,8 @@ class MSRIDD_GUI(tk.Frame):
             self.prj_path.set(default_path)
 
     def get_inputdata_path(self):
+        """ Get input data path for single analysis
+        """
         old_path = self.inputdata_entry.get()
         filetype_list = [("text file", "*.txt")]
         new_path = filedialog.askopenfilename(
@@ -561,12 +632,17 @@ class MSRIDD_GUI(tk.Frame):
             self.inputdata_path.set(new_path)
 
     def clear_button(self):
+        """ Clear user setting property
+        """
         self.prj_path.set("")
         self.inputdata_path.set("")
         self.radio_btn_value.set("")
         # self.sample_name.set("")
 
     def check_parameters(self):
+        """ Check the data paths (project path, input data path, 
+            and data format) for single analysis
+        """
         prj_path = self.prj_path_entry.get().rsplit('/', 1)[0]
         inputdata_path = self.inputdata_entry.get()
         dataformat = self.radio_btn_value.get()
@@ -593,6 +669,8 @@ class MSRIDD_GUI(tk.Frame):
             thread_2.start()
 
     def start_single_analysis(self):
+        """ Set the parameters and start single analysis
+        """
         start = time.time()
         dataformat = self.radio_btn_value.get()
         user_def_path = self.prj_path_entry.get()
@@ -649,9 +727,13 @@ class MSRIDD_GUI(tk.Frame):
         print(f'Process time: {time.time() - start:.3f} [sec]')
     
     def delete_contents(self):
-        frame_list = [self.left_wrap_frame, self.db_candidates_frame, 
-                      self.matched_fragments_frame, self.centroid_msms_frame, 
-                      self.measured_vs_ref_msms_frame]
+        """ Clear the contents in widgets on main windows before single analysis
+        """
+        frame_list = [
+            self.left_wrap_frame, self.db_candidates_frame, 
+            self.matched_fragments_frame, self.centroid_msms_frame, 
+            self.measured_vs_ref_msms_frame
+        ]
         for frame in frame_list:
             for widget in frame.winfo_children():
                 widget.destroy()
@@ -659,6 +741,8 @@ class MSRIDD_GUI(tk.Frame):
 
     #region Open project
     def import_project_files(self):
+        """ Browse *_analysis_table.pkl data and start importing data
+        """
         filetype_list = [("pkl file", "*.pkl")]
         self.imported_data = filedialog.askopenfilename(
             filetypes=filetype_list, title="Select file")
@@ -679,6 +763,10 @@ class MSRIDD_GUI(tk.Frame):
             thread_2.start()
     
     def reflect_imported_data_on_main_widgets(self):
+        """ Reflect imported data (*_analysis_table.pkl, *_extracted_msms.pickle,
+            *_cid_result.pickle, *_oad_result.pickle, *_structure_info.pickle,
+            *_graph_info.pickle) as contents in widgets
+        """
         def load_picklefile(path):
             with open(path, 'rb') as web:
                 loadfile = pickle.load(web)
@@ -710,18 +798,27 @@ class MSRIDD_GUI(tk.Frame):
         self.temp_prgbar.close_window()
 
     def create_importing_prgbar_window(self):
-        self.temp_prgbar = ProgressBar(self.master,
-            title="Data import in progress", detail="--- Data importing ---")
+        """ Construct progress bar for data importing process
+        """
+        self.temp_prgbar = ProgressBar(
+            self.master,
+            title="Data import in progress", 
+            detail="--- Data importing ---"
+        )
     #endregion
 
     #region Save data
     def start_saving(self):
+        """ Start Saving and Construct a pop-up window
+        """
         thread_1 = threading.Thread(target=self.popup_for_saving)
         thread_2 = threading.Thread(target=self.save_analysis_files)
         thread_1.start()
         thread_2.start()
 
     def save_analysis_files(self):
+        """ Save the result data of OAD-MS/MS analysis
+        """
         dataframe_path = f'{self.prj_path}/{self.user_prefix}_analysis_table.pkl'
         msms_path = f'{self.prj_path}/{self.user_prefix}_extracted_msms.pickle'
         cid_reslut_path = f'{self.prj_path}/{self.user_prefix}_cid_result.pickle'
@@ -743,19 +840,27 @@ class MSRIDD_GUI(tk.Frame):
         self.temp_popup.close_window()
 
     def popup_for_saving(self):
+        """ Pop-up a message window while saving
+        """
         self.temp_popup = PopUpWindow(master=self.master,
             title='Saving files', message='Saving files ...')
     #endregion
 
     #region Close window
     def quit_software(self):
+        """ Close GUI of MS-RIDD software and ask to save data before closing
+        """
         if self.data_exist:
-            reply = messagebox.askyesno('Question', 
+            reply = messagebox.askyesno(
+                'Question', 
                 ('Before closing the software, you need file saving.\n'
-                +'Save the project file?'))
+                +'Save the project file?')
+            )
             if reply:
-                self.temp_popup = PopUpWindow(master=self.master,
-                    title='Saving files', message='Saving files ...')
+                self.temp_popup = PopUpWindow(
+                    master=self.master, 
+                    title='Saving files', message='Saving files ...'
+                )
                 time.sleep(1)
                 self.save_analysis_files()
                 time.sleep(2)
@@ -765,9 +870,13 @@ class MSRIDD_GUI(tk.Frame):
                 self.close_window(self.master)
         else:
             self.close_window(self.master)
+    #endregion
 
     #region Data preparation
     def merge_bipolarity_cid(self):
+        """ Merge CID data of negative ion mode and positive ion mode to generate
+            text library for acyl-chain isomer level annotations
+        """
         self.disable_widgets()
         self.twopath_importer = TwoPathImporter(master=self.master,
             title="Merge Neg&Pos CID-MS/MS data",
@@ -776,6 +885,9 @@ class MSRIDD_GUI(tk.Frame):
         self.activate_widgets()
 
     def merge_cid_and_oad(self):
+        """ Merge CID data and OAD data to generate input data (.txt) for
+            MS-RIDD analysis
+        """
         self.disable_widgets()
         self.twopath_importer = TwoPathImporter(master=self.master,
             title="Merge CID&OAD MS/MS data",
@@ -785,6 +897,8 @@ class MSRIDD_GUI(tk.Frame):
 
     #region Export window
     def create_data_export_window(self):
+        """ Construct data exporting window
+        """
         self.export_window = tk.Toplevel(self.master)
         self.export_window.attributes('-topmost', False)
         self.center_position(self.export_window, width=690, height=120)
@@ -793,39 +907,48 @@ class MSRIDD_GUI(tk.Frame):
         self.export_window.grab_set()
         self.export_window.iconphoto(False, tk.PhotoImage(file=IconPath))
         self.create_data_export_widgets()
-        self.export_window.protocol('WM_DELETE_WINDOW', lambda : self.close_window(self.export_window))
+        self.export_window.protocol(
+            'WM_DELETE_WINDOW', lambda : self.close_window(self.export_window)
+        )
 
     def create_data_export_widgets(self):
+        """ Construct widgets on a data exporting window
+        """
         # Export path
         exporter_label = ttk.Label(self.export_window, text="Directory :")
         exporter_label.place(x=30, y=20)
         self.export_path = tk.StringVar()
         self.export_path_entry = ttk.Entry(
-            self.export_window, textvariable=self.export_path, width=75)
+            self.export_window, textvariable=self.export_path, width=75
+        )
         self.export_path_entry.place(x=100, y=20)
         self.export_path_btn = ttk.Button(
-            self.export_window, text="Select", command=self.get_export_path)
+            self.export_window, text="Select", command=self.get_export_path
+        )
         self.export_path_btn.place(x=580, y=18)
         # txt file check
         self.txt_export_bool = tk.BooleanVar()
         self.txt_export_bool.set(False)
         self.txt_export_check = ttk.Checkbutton(
             self.export_window, text="Result sheet (.txt)", 
-            variable=self.txt_export_bool)
+            variable=self.txt_export_bool
+        )
         self.txt_export_check.place(x=30, y=68)
         # xlsx file check
         self.excel_export_bool = tk.BooleanVar()
         self.excel_export_bool.set(True)
         self.excel_export_check = ttk.Checkbutton(
             self.export_window, text="Analysis report (.xlsx)", 
-            variable=self.excel_export_bool)
+            variable=self.excel_export_bool
+        )
         self.excel_export_check.place(x=190, y=68)
         # pptx file check
         self.pptx_export_bool = tk.BooleanVar()
         self.pptx_export_bool.set(False)
         self.pptx_export_check = ttk.Checkbutton(
             self.export_window, text="MS/MS figures (.pptx)", 
-            variable=self.pptx_export_bool)
+            variable=self.pptx_export_bool
+        )
         self.pptx_export_check.place(x=370, y=68)
         # NL HeatMap check
         # self.nl_heatmap_export_bool = tk.BooleanVar()
@@ -835,10 +958,15 @@ class MSRIDD_GUI(tk.Frame):
         #     variable=self.nl_heatmap_export_bool)
         # self.nl_heatmap_export_check.place(x=30, y=98)
         # Export button
-        self.export_btn = ttk.Button(self.export_window, text="Export", command=self.check_export_parameter)
+        self.export_btn = ttk.Button(
+            self.export_window, text="Export", 
+            command=self.check_export_parameter
+        )
         self.export_btn.place(x=580, y=68)
 
     def get_export_path(self):
+        """ Get folder path to export result data
+        """
         old_path = self.export_path_entry.get()
         new_path = filedialog.askdirectory(title="Select export directory")
         if new_path == "":
@@ -847,29 +975,41 @@ class MSRIDD_GUI(tk.Frame):
             self.export_path.set(new_path)
 
     def check_export_parameter(self):
+        """ Check data types for result exporting
+        """
         export_path = self.export_path_entry.get()
         txt_bool = self.txt_export_bool.get()
         excel_bool = self.excel_export_bool.get()
         pptx_bool = self.pptx_export_bool.get()
         # heatmap_bool = self.nl_heatmap_export_bool.get()
         if export_path == "":
-            messagebox.showwarning("Select export directory", "Please select export directory")
+            messagebox.showwarning(
+                "Select export directory", "Please select export directory"
+            )
         elif not any([txt_bool, excel_bool, pptx_bool]):
-            messagebox.showwarning("Select export data format", "Please select export data format")
+            messagebox.showwarning(
+                "Select export data format", "Please select export data format"
+            )
         else:
             self.start_export()    
 
     def start_export(self):
+        """ Set multi-threads for result exporting and constructing progress bar
+        """
         self.temp_vert_prgbar = VerticalProgressBars(
             master=self.master, title="Result export in progress",
-            start_text="Start exporting")
+            start_text="Start exporting"
+        )
         thread_1 = threading.Thread(
-            target=self.start_vertical_prgbar_window)
+            target=self.start_vertical_prgbar_window
+        )
         thread_2 = threading.Thread(target=self.export_analysis_data)
         thread_1.start()
         thread_2.start()
 
     def export_analysis_data(self):
+        """ Start result exporting
+        """
         start = time.time()
         export_path = self.export_path_entry.get()
         txt_bool = self.txt_export_bool.get()
@@ -883,14 +1023,17 @@ class MSRIDD_GUI(tk.Frame):
             self.temp_vert_prgbar.each_prgbar["value"] = 0
             self.temp_vert_prgbar.each_prgbar["maximum"] = 100
             self.temp_vert_prgbar.section_report.set(
-                "Exporting result table of text format")
+                "Exporting result table of text format"
+            )
             time.sleep(2)
             self.temp_vert_prgbar.section_bar.step(1)
-            text_sheet_exporter(path=export_path, 
+            text_sheet_exporter(
+                path=export_path, 
                 target_table=self.target_table, cid=self.cid_result_dict, 
                 oad=self.oad_result_dict, 
                 structure_info=self.lipid_structural_info_dict, 
-                normalized=self.normalized_data, stamp=self.user_prefix)
+                normalized=self.normalized_data, stamp=self.user_prefix
+            )
             self.temp_vert_prgbar.each_prgbar.step(99)
             time.sleep(2)
         if excel_bool:
@@ -898,15 +1041,18 @@ class MSRIDD_GUI(tk.Frame):
             self.temp_vert_prgbar.each_prgbar["maximum"] \
                 = len(self.target_table)+1
             self.temp_vert_prgbar.section_report.set(
-                "Exporting analysis report (.xlsx)")
-            excel_sheet_exporter2(path=export_path, 
+                "Exporting analysis report (.xlsx)"
+            )
+            excel_sheet_exporter2(
+                path=export_path, 
                 target_table=self.target_table,
                 msms=self.msms_dict, cid=self.cid_result_dict, 
                 oad=self.oad_result_dict, 
                 structure_info=self.lipid_structural_info_dict, 
                 normalized=self.normalized_data, stamp=self.user_prefix,
                 each_bar=self.temp_vert_prgbar.each_prgbar,
-                each_rep=self.temp_vert_prgbar.each_report)
+                each_rep=self.temp_vert_prgbar.each_report
+            )
             self.temp_vert_prgbar.section_bar.step(1)
             time.sleep(2)
         if pptx_bool:
@@ -915,20 +1061,26 @@ class MSRIDD_GUI(tk.Frame):
             self.temp_vert_prgbar.each_prgbar["maximum"] \
                 = 2*len(self.target_table)+1
             self.temp_vert_prgbar.section_report.set(
-                "Generating OAD-MS/MS figures")
-            generate_msms_figures(path=export_path, msms_dict=self.msms_dict, 
+                "Generating OAD-MS/MS figures"
+            )
+            generate_msms_figures(
+                path=export_path, msms_dict=self.msms_dict, 
                 cid=self.cid_result_dict, oad=self.oad_result_dict,
                 structure_info=self.lipid_structural_info_dict, 
                 graph=self.graph_dict, stamp=self.user_prefix,
                 each_bar=self.temp_vert_prgbar.each_prgbar,
-                each_rep=self.temp_vert_prgbar.each_report)
+                each_rep=self.temp_vert_prgbar.each_report
+            )
             self.temp_vert_prgbar.section_report.set(
-                "Saving OAD-MS/MS figures (.pptx)")
+                "Saving OAD-MS/MS figures (.pptx)"
+            )
             self.temp_vert_prgbar.section_bar.step(1)
-            save_msms_fig_as_pptx(path=export_path, stamp=self.user_prefix, 
+            save_msms_fig_as_pptx(
+                path=export_path, stamp=self.user_prefix, 
                 target_table=self.target_table,
                 each_bar=self.temp_vert_prgbar.each_prgbar,
-                each_rep=self.temp_vert_prgbar.each_report)
+                each_rep=self.temp_vert_prgbar.each_report
+            )
             time.sleep(1)
         self.temp_vert_prgbar.section_report.set("Export completed.")
         self.temp_vert_prgbar.section_bar.step(0.99)
@@ -942,14 +1094,20 @@ class MSRIDD_GUI(tk.Frame):
         self.temp_vert_prgbar.process_timer()
         
     def create_export_prgbar_window(self):
-        self.temp_prgbar = ProgressBar(self.master,
+        """ construct progress bar for export process
+        """
+        self.temp_prgbar = ProgressBar(
+            self.master,
             title="Result export in progress", 
-            detail="--- Result exporting ---")
+            detail="--- Result exporting ---"
+        )
 
     #endregion
 
     #region ProgressBar window
     def create_progress_bar_window(self):
+        """ Construct progress bar for OAD-MS/MS analysis
+        """
         self.progressbar_window = tk.Toplevel(self.master)
         self.progressbar_window.attributes('-topmost', True)
         self.center_position(self.progressbar_window, width=690, height=155)
@@ -958,13 +1116,16 @@ class MSRIDD_GUI(tk.Frame):
         self.progressbar_window.grab_set()
         self.progressbar_window.iconphoto(False, tk.PhotoImage(file=IconPath))
         self.progressbar_window.protocol(
-            'WM_DELETE_WINDOW', lambda : self.close_window(self.setting_window))
+            'WM_DELETE_WINDOW', lambda : self.close_window(self.setting_window)
+        )
         self.create_progressbar_widgets()
         self.data_analysis_running = True
         self.analysis_start = True
         self.process_timer()
     
     def create_progressbar_widgets(self):
+        """ Construct widgets on progress bar for OAD-MS/MS analysis
+        """
         # Section Bar
         self.section_bar = ttk.Progressbar(self.progressbar_window, 
             orient='horizontal', length=534, mode='determinate')
@@ -992,11 +1153,15 @@ class MSRIDD_GUI(tk.Frame):
         each_label.place(x=30, y=115)
         # Timer
         self.small_timer = tk.StringVar()
-        # self.small_timer_label = ttk.Label(self.progressbar_window, textvariable=self.small_timer, font=("", 14))
+        # self.small_timer_label = ttk.Label(
+        #   self.progressbar_window, textvariable=self.small_timer, font=("", 14)
+        # )
         # self.small_timer_label.place(x=580, y=88)
         # self.small_timer.set("00:00:00")
 
     def process_timer(self):
+        """ Set the current time as string (hour, minute, second) to timer
+        """
         hour = 0
         minute = 0
         second = 0
@@ -1027,6 +1192,9 @@ class MSRIDD_GUI(tk.Frame):
 
     #region Updating main window
     def set_analysis_result_into_table(self):
+        """ Set data (ID, RT, m/z, m/z type, Solved, Result name, 
+            Height or Conc.(pmol/mg), Ontology, Comment) to metabolite table
+        """
         self.create_result_table_tree(self.result_table_pwin)
         self.create_db_1_table_tree(self.db_1_pwin)
         self.create_db_2_table_tree(self.db_2_pwin)
@@ -1045,9 +1213,13 @@ class MSRIDD_GUI(tk.Frame):
             ontology = df['Ontology']
             comment = df['User comment']
             tag = 'colored' if tag == 'white' else 'white'
-            self.result_table_tree.insert("", "end", tags=tag,
-                values=[idx, rt, mz, mz_type, solved, result_name, 
-                        data_from, ion_v, ontology, comment])
+            self.result_table_tree.insert(
+                "", "end", tags=tag,
+                values=[
+                    idx, rt, mz, mz_type, solved, result_name, data_from, 
+                    ion_v, ontology, comment
+                ]
+            )
         new_label = "Result table (molecules={})".format(i+1)
         self.left_wrap_label_change(new_label)
         self.result_table_tree.tag_configure('colored', background="#dcdcdc")
@@ -1058,14 +1230,30 @@ class MSRIDD_GUI(tk.Frame):
         self.result_table_tree.bind("<<TreeviewSelect>>", self.data_setting)
 
     def left_wrap_label_change(self, txt):
+        """ Set number of metabolites upon metabolite table
+        
+        Args:
+            txt (str): "Result table molecules=xxx"
+        """
         self.left_wrap_lebel.set(txt)
         self.left_wrap_frame.configure(text=self.left_wrap_lebel.get())
 
     def matched_ions_label_label_change(self, txt):
+        """ Set number of matched ions upon mass table
+
+        Args:
+            txt (str): "Mass table (ions=xxx)"
+        """
         self.matched_ions_label.set(txt)
-        self.matched_fragments_frame.configure(text=self.matched_ions_label.get())
+        self.matched_fragments_frame.configure(
+            text=self.matched_ions_label.get()
+        )
 
     def data_setting(self, event, is_first=False):
+        """ Set data (candidates of C=C positions, measured fragment ions,
+            full range of OAD-MS/MS spectrum, and magnified OAD-MS/MS spectrum) 
+            of selected metabolite to widgets
+        """
         #region CID result dict structure
         # cid_dict = {'Lipid subclass': {'Glycine': [ref_mz, measured_mz, ppm],
         #                                'Presence': 50.00},
@@ -1152,30 +1340,39 @@ class MSRIDD_GUI(tk.Frame):
         #endregion
         #region Update OAD-MS/MS fig with reference
         self.update_oad_msms_fig_with_ref(
-            dict_1=moiety_1, dict_2=moiety_2, dict_3=moiety_3)
+            dict_1=moiety_1, dict_2=moiety_2, dict_3=moiety_3
+        )
         if is_first:
             # func(self.partially_update_data) occurs 3 times unnecessarily
             # due to the binding problem
             self.db_candidates_frame.bind_class(
-                "Treeview", "<<TreeviewSelect>>", self.partially_update_data)
+                "Treeview", "<<TreeviewSelect>>", self.partially_update_data
+            )
         #endregion
 
     def update_db_trees(self, result_dict, is_first=False, masstable=True):
+        """ Set C=C positional candidates of selected metabolite to 
+            widget panels
+        """
         result_dict_len = len(result_dict)
         moiety_1, moiety_2, moiety_3 = {}, {}, {}
         if result_dict_len == 4:
             moiety_1 = result_dict['Moiety-1']
             if moiety_1:
                 self.fill_in_data_on_db_tree(
-                    tree_no=1, data=moiety_1, is_first=is_first)
+                    tree_no=1, data=moiety_1, is_first=is_first
+                )
                 self.fill_in_nan_on_db_trees(
-                    db_2=True, db_3=True, is_first=is_first)
+                    db_2=True, db_3=True, is_first=is_first
+                )
                 if masstable:
                     self.fill_in_matched_fragment_ions_tree(
-                        moiety_1=moiety_1[0], is_first=is_first)
+                        moiety_1=moiety_1[0], is_first=is_first
+                    )
             else:
                 self.fill_in_nan_on_db_trees(
-                    db_1=True, db_2=True, db_3=True, is_first=is_first)
+                    db_1=True, db_2=True, db_3=True, is_first=is_first
+                )
                 if masstable:
                     self.fill_in_matched_fragment_ions_tree(is_first=is_first)
         elif result_dict_len == 5:
@@ -1183,32 +1380,40 @@ class MSRIDD_GUI(tk.Frame):
             moiety_2 = result_dict['Moiety-2']
             if moiety_1 and moiety_2:
                 self.fill_in_data_on_db_tree(
-                    tree_no=1, data=moiety_1, is_first=is_first)
+                    tree_no=1, data=moiety_1, is_first=is_first
+                )
                 self.fill_in_data_on_db_tree(
-                    tree_no=2, data=moiety_2, is_first=is_first)
-                self.fill_in_nan_on_db_trees(
-                    db_3=True, is_first=is_first)
+                    tree_no=2, data=moiety_2, is_first=is_first
+                )
+                self.fill_in_nan_on_db_trees(db_3=True, is_first=is_first)
                 if masstable:
                     self.fill_in_matched_fragment_ions_tree(
                         moiety_1=moiety_1[0], moiety_2=moiety_2[0], 
-                        is_first=is_first)
+                        is_first=is_first
+                    )
         elif result_dict_len == 6:
             moiety_1 = result_dict['Moiety-1']
             moiety_2 = result_dict['Moiety-2']
             moiety_3 = result_dict['Moiety-3']
             if moiety_1 and moiety_2 and moiety_3:
                 self.fill_in_data_on_db_tree(
-                    tree_no=1, data=moiety_1, is_first=is_first)
+                    tree_no=1, data=moiety_1, is_first=is_first
+                )
                 self.fill_in_data_on_db_tree(
-                    tree_no=2, data=moiety_2, is_first=is_first)
+                    tree_no=2, data=moiety_2, is_first=is_first
+                )
                 self.fill_in_data_on_db_tree(
-                    tree_no=3, data=moiety_3, is_first=is_first)
+                    tree_no=3, data=moiety_3, is_first=is_first
+                )
                 if masstable:
                     self.fill_in_matched_fragment_ions_tree(
                         moiety_1=moiety_1[0], moiety_2=moiety_2[0], 
-                        moiety_3=moiety_3[0], is_first=is_first)
+                        moiety_3=moiety_3[0], is_first=is_first
+                    )
 
     def get_focused_item(self, is_first=False):
+        """ Get ID of currently selected metabolite
+        """
         if is_first:
             first_iid = self.result_table_tree.get_children()[0]
             selected_values = self.result_table_tree.item(first_iid, 'value')
@@ -1216,13 +1421,16 @@ class MSRIDD_GUI(tk.Frame):
         else:
             selected_items = self.result_table_tree.selection()
             selected_values = self.result_table_tree.item(
-                selected_items[0], 'values')
+                selected_items[0], 'values'
+            )
             # str_idx = selected_values[0]
             # idx = int(str_idx)
         return selected_values
 
     def fill_in_nan_on_db_trees(
         self, db_1=False, db_2=False, db_3=False, is_first=False):
+        """ Fill in 'N/A' to widget panel in case of no C=C positinal candidates
+        """
         # tree.column = ['Rank', 'moiety', 'Score', 'Presence', 'Rel. Int']
         li=['N/A', 'N/A', 'N/A', 'N/A', 'N/A']
         if db_1:
@@ -1245,6 +1453,9 @@ class MSRIDD_GUI(tk.Frame):
                 self.db_3_pwin.add(self.db_3_tree)
 
     def fill_in_data_on_db_tree(self, tree_no, data, is_first=False):
+        """ Fill in data (Ranking, N-description, Score, Presence, Rel. Int)
+            to widget panel
+        """
         # d = {Positions:~, N-description:~, Score:~, Ratio sum:~, 
         #      Presence:~, Notice:~, Peaks dict:{}}
         # tree.column = ['Rank', 'moiety-1', 'Score', 'Presence', 'Rel. Int']
@@ -1271,9 +1482,13 @@ class MSRIDD_GUI(tk.Frame):
                     continue
                 tag = 'colored' if key%2 == 1 else 'white'
                 # if 'Unresolved' not in d['Notice']:
-                self.db_1_tree.insert("", "end", tags=tag, 
-                    values=[key+1, d['N-description'], d['Score'], 
-                    d['Presence'], d['Ratio sum']])
+                self.db_1_tree.insert(
+                    "", "end", tags=tag, 
+                    values=[
+                        key+1, d['N-description'], d['Score'], d['Presence'], 
+                        d['Ratio sum']
+                    ]
+                )
                 # else:
                 #     self.db_1_tree.insert("", "end", tags=tag, values=li)
             # if check_no_unresolved_in_data(data):
@@ -1290,9 +1505,13 @@ class MSRIDD_GUI(tk.Frame):
                     continue
                 tag = 'colored' if key%2 == 1 else 'white'
                 # if 'Unresolved' not in d['Notice']:
-                self.db_2_tree.insert("", "end", tags=tag, 
-                    values=[key+1, d['N-description'], d['Score'], 
-                    d['Presence'], d['Ratio sum']])
+                self.db_2_tree.insert(
+                    "", "end", tags=tag, 
+                    values=[
+                        key+1, d['N-description'], d['Score'], d['Presence'], 
+                        d['Ratio sum']
+                    ]
+                )
                 # else:
                 #     self.db_2_tree.insert("", "end", tags=tag, values=li)
             # if check_no_unresolved_in_data(data):
@@ -1309,9 +1528,13 @@ class MSRIDD_GUI(tk.Frame):
                     continue
                 tag = 'colored' if key%2 == 1 else 'white'
                 # if 'Unresolved' not in d['Notice']:
-                self.db_3_tree.insert("", "end", tags=tag, 
-                    values=[key+1, d['N-description'], d['Score'], 
-                    d['Presence'], d['Ratio sum']])
+                self.db_3_tree.insert(
+                    "", "end", tags=tag, 
+                    values=[
+                        key+1, d['N-description'], d['Score'], d['Presence'], 
+                        d['Ratio sum']
+                    ]
+                )
             #     else:
             #         self.db_3_tree.insert("", "end", tags=tag, values=li)
             # if check_no_unresolved_in_data(data):
@@ -1323,6 +1546,8 @@ class MSRIDD_GUI(tk.Frame):
 
     def fill_in_matched_fragment_ions_tree(self, moiety_1=False, moiety_2=False, 
         moiety_3=False, is_first=False):
+        """ Fill in information of matched OAD fragment ions to mass table
+        """
         # tree = ['m/z', 'Intensity', 'Ratio(%)', 'Delta', 
         #         'Ref m/z1', 'ppm1', 'NL type1', 
         #         'Ref m/z2', 'ppm2', 'NL type2', 
@@ -1366,6 +1591,9 @@ class MSRIDD_GUI(tk.Frame):
             self.matched_fragments_pwin.add(self.matched_fragments_tree)
 
     def switch_matched_fragment_ions_tree(self):
+        """ Switch mass table display only for all fragment ions
+            or those to which tags of OAD fragmentation are assign.
+        """
         switch = self.show_only_matched_ions.get()
         db_1_pos, db_2_pos, db_3_pos = self.db_1, self.db_2, self.db_3
         result_dict = self.oad_result_dict[self.selected_idx]
@@ -1438,6 +1666,9 @@ class MSRIDD_GUI(tk.Frame):
             self.matched_fragments_tree.tag_configure('colored', background="#dcdcdc")
     
     def switch_result_table_tree(self):
+        """ Switch metabolite table display only for all metabolites 
+            or those for which the C=C positions were resolved.
+        """
         switch = self.show_only_solved_mol.get()
         target_idx = self.selected_idx
         selected_iid = self.result_table_tree.get_children()[0]
@@ -1447,7 +1678,10 @@ class MSRIDD_GUI(tk.Frame):
         if switch:
             count = 0
             for i, (row, df) in enumerate(self.target_table.iterrows()):
-                # tree = ['ID', 'RT', 'm/z', 'm/z type', 'Solved','Result name', 'Height', 'Ontology', 'Comment']
+                # tree = [
+                #   'ID', 'RT', 'm/z', 'm/z type', 'Solved','Result name', 
+                #   'Height', 'Ontology', 'Comment'
+                # ]
                 solved = df['Solved level']
                 if solved == 'None': continue
                 idx = df['ID']
@@ -1461,15 +1695,22 @@ class MSRIDD_GUI(tk.Frame):
                 comment = df['User comment']
                 tag = 'colored' if tag == 'white' else 'white'
                 count += 1
-                iid = self.result_table_tree.insert("", "end", tags=tag,
-                        values=[idx, rt, mz, mz_type, solved, result_name, 
-                                data_from, ion_v, ontology, comment])
+                iid = self.result_table_tree.insert(
+                    "", "end", tags=tag,
+                    values=[
+                        idx, rt, mz, mz_type, solved, result_name, 
+                        data_from, ion_v, ontology, comment
+                    ]
+                )
                 if idx == target_idx:
                     selected_iid = iid
             new_label = f'Result table (molecules={count})'
         else:
             for i, (row, df) in enumerate(self.target_table.iterrows()):
-                # tree = ['ID', 'RT', 'm/z', 'm/z type', 'Solved','Result name', 'Height', 'Ontology', 'Comment']
+                # tree = [
+                #   'ID', 'RT', 'm/z', 'm/z type', 'Solved','Result name', 
+                #   'Height', 'Ontology', 'Comment'
+                # ]
                 idx = df['ID']
                 rt = math_floor(df['RT(min)'], 3)
                 mz = df['Precise m/z']
@@ -1481,9 +1722,13 @@ class MSRIDD_GUI(tk.Frame):
                 ontology = df['Ontology']
                 comment = df['User comment']
                 tag = 'colored' if tag == 'white' else 'white'
-                iid = self.result_table_tree.insert("", "end", tags=tag,
-                        values=[idx, rt, mz, mz_type, solved, result_name, 
-                                data_from, ion_v, ontology, comment])
+                iid = self.result_table_tree.insert(
+                    "", "end", tags=tag,
+                    values=[
+                        idx, rt, mz, mz_type, solved, result_name, 
+                        data_from, ion_v, ontology, comment
+                    ]
+                )
                 if idx == target_idx:
                     selected_iid = iid
             new_label = f'Result table (molecules={i+1})'
@@ -1546,9 +1791,11 @@ class MSRIDD_GUI(tk.Frame):
                         new_db_3 = d
                         moiety_3[0] = d
             self.fill_in_matched_fragment_ions_tree(
-                moiety_1=new_db_1, moiety_2=new_db_2, moiety_3=new_db_3)
+                moiety_1=new_db_1, moiety_2=new_db_2, moiety_3=new_db_3
+            )
             self.update_oad_msms_fig_with_ref(
-                dict_1=moiety_1, dict_2=moiety_2, dict_3=moiety_3)
+                dict_1=moiety_1, dict_2=moiety_2, dict_3=moiety_3
+            )
 
     def get_current_db_pos_and_rank(self):
         # tree.column = ['Rank', 'moiety-1', 'Score', 'Presence', 'Rel. Int']
@@ -2960,8 +3207,9 @@ class BatchSettingWindow(object):
         label1.grid(row=1, column=1)
         label2 = ttk.Label(self.inner_canvas, text='Path')
         label2.grid(row=1, column=2)
-        file_names = [path.rsplit('/', 1)[-1].replace('.txt', '') 
-                      for path in paths]
+        file_names = [
+            path.rsplit('/', 1)[-1].replace('.txt', '') for path in paths
+        ]
         self.entries = {col: [] for col in ['Files', 'Paths']}
         y_range = len(file_names)*40
         self.inner_canvas.place(x=0, y=0, width=630, height=y_range)
@@ -2977,8 +3225,10 @@ class BatchSettingWindow(object):
             #     x=20, y=i*40, width=f_w, window=self.entries['Paths'][i])
             self.entries['Files'][i].insert(0, name)
             self.entries['Paths'][i].insert(0, path)
-        self.v_scrollbar = ttk.Scrollbar(self.wrapper_frame, orient=tk.VERTICAL,
-            command=self.inner_canvas.yview)
+        self.v_scrollbar = ttk.Scrollbar(
+            self.wrapper_frame, orient=tk.VERTICAL, 
+            command=self.inner_canvas.yview
+        )
         self.v_scrollbar.pack(side=tk.RIGHT, fill='y')
         self.inner_canvas.configure(yscrollcommand=self.v_scrollbar.set)
         # self.inner_canvas.configure(scrollregion=self.inner_canvas.bbox('all'),
