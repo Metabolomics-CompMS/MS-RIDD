@@ -102,19 +102,19 @@ class SingleAnalyzer(object):
                  file_name, sec_rep, sec_bar, each_rep, each_bar, timer):
         """
         Args:
-            tabel_format
-            directry
-            prefix
-            input_data
-            ms_tolerance_ppm
+            tabel_format (str): data format (PeakList or Alignment)
+            directry (str): Project folder path
+            prefix (str): User defined data-prefix
+            input_data (txt): Input data path
+            ms_tolerance_ppm (int): mass tolerance
             must_nl_cut_off_dict (dict): 
                 types of essential ions and relative intensity threshold
-            cut_off_ratio
-            file_name
-            sec_rep
-            sec_bar
-            each_rep
-            each_bar
+            cut_off_ratio (float): Relative intensity threshold
+            file_name (str): File name
+            sec_rep (calss object): tk.StringVar
+            sec_bar (class object): ttk.Progressbar
+            each_rep (calss object): tk.StringVar
+            each_bar (class object): ttk.Progressbar
             
         """
         sec_rep.set("Data Pre-processing")
@@ -378,6 +378,20 @@ class BatchAnalyzer(object):
         normalized, sec_rep, sec_bar, each_rep, each_bar, timer):
         """
         Args:
+            directry (str): Project folder path
+            prefix (str): User defined data-prefix
+            alignment_path (txt): Alignment data path
+            peakid_path (txt): PeakID data path
+            peaklists_dict (dict): PeakLists dict {File name: File path}
+            ms_tolerance_ppm (int): mass tolerance
+            must_nl_cut_off_dict (dict): 
+                types of essential ions and relative intensity threshold
+            cut_off_ratio (float): Relative intensity threshold
+            normalized (bool): Whether the alignment data is normalized
+            sec_rep (calss object): tk.StringVar
+            sec_bar (class object): ttk.Progressbar
+            each_rep (calss object): tk.StringVar
+            each_bar (class object): ttk.Progressbar
             
         """
         sec_rep.set("Data Pre-processing")
