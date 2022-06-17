@@ -66,7 +66,17 @@ triacyls_sphingolipids = ['ASM', 'AHexCer',  'HexCer_EOS'
 
 
 class DataPreprocessor(object):
+    """ Definition of class that handle CID data and OAD data to merge data and 
+        generate text library
+    """
     def __init__(self, path1, fmt1, path2, fmt2):
+        """
+        Args:
+            path1 (str): input data path1
+            path2 (str): input data path2
+            fmt1 (str): format of input data path1
+            fmt2 (str): format of input data path2
+        """
         dt_now = datetime.datetime.now()
         idx = str(dt_now).find('.') +1
         stamp = str(dt_now)[:idx].replace('-', '').replace(' ', '_').replace('.', 's')
@@ -78,6 +88,12 @@ class DataPreprocessor(object):
         self.fmt1, self.fmt2 = fmt1, fmt2
         
     def merge_bipolarity_cid_data(self, output='pos'):
+        """ Merge CID data of positive & negative ion mode 
+            and save as text library format
+
+        Args:
+            output='pos': polatiry of export data
+        """
         neg_path, neg_format = self.path1, self.fmt1
         pos_path, pos_format = self.path2, self.fmt2
         neg = self.check_input_format(neg_path, neg_format)
@@ -101,8 +117,10 @@ class DataPreprocessor(object):
             pos = self.rename_for_txt_library(pos)
             pos.to_csv(
                 txt_path, index=False, sep='\t',
-                columns=['Name', 'MZ', 'RT', 'Adduct', 'InChIKey',
-                         'Formula', 'SMILES', 'Ontology', 'CCS']
+                columns=[
+                    'Name', 'MZ', 'RT', 'Adduct', 'InChIKey',
+                    'Formula', 'SMILES', 'Ontology', 'CCS'
+                ]
             )
         elif output == 'neg':
             neg['CCS'] = 0
@@ -110,11 +128,16 @@ class DataPreprocessor(object):
             neg = self.rename_for_txt_library(neg)
             neg.to_csv(
                 txt_path, index=False, sep='\t',
-                columns=['Name', 'MZ', 'RT', 'Adduct', 'InChIKey',
-                         'Formula', 'SMILES', 'Ontology', 'CCS']
+                columns=[
+                    'Name', 'MZ', 'RT', 'Adduct', 'InChIKey',
+                    'Formula', 'SMILES', 'Ontology', 'CCS'
+                ]
             )
 
     def merge_cid_and_oad_data(self):
+        """ Merge CID & OAD data of positive ion mode 
+            and save as text library format
+        """
         cid_path, cid_format = self.path1, self.fmt1
         oad_path, oad_format = self.path2, self.fmt2
         cid_raw_table = self.check_input_format(cid_path, cid_format)
@@ -122,17 +145,21 @@ class DataPreprocessor(object):
         cid_table = self.extract_annotated_molecules(cid_raw_table)
         mass_tolerance = 0.01
         rt_tolerance = 0.5
-        column_list = ['Metabolite name', 'Adduct type', 'Reference RT', 
-                       'Reference m/z', 'Formula', 'Ontology', 'INCHIKEY', 
-                       'SMILES']
+        column_list = [
+            'Metabolite name', 'Adduct type', 'Reference RT', 
+            'Reference m/z', 'Formula', 'Ontology', 'INCHIKEY', 'SMILES'
+        ]
         for row, df in cid_table.iterrows():
             front_mz = df['Average Mz'] - mass_tolerance
             tail_mz = df['Average Mz'] + mass_tolerance
             front_rt = df['Average Rt(min)'] - rt_tolerance
             tail_rt = df['Average Rt(min)'] + rt_tolerance
             extracted_oad_df = oad[
-                (oad['Average Mz'] > front_mz)&(oad['Average Mz'] < tail_mz)
-                &(oad['Average Rt(min)'] > front_rt)&(oad['Average Rt(min)'] < tail_rt)]
+                (oad['Average Mz'] > front_mz)
+                &(oad['Average Mz'] < tail_mz)
+                &(oad['Average Rt(min)'] > front_rt)
+                &(oad['Average Rt(min)'] < tail_rt)
+            ]
             df_len = len(extracted_oad_df)
             if df_len == 1:
                 target_row = extracted_oad_df.index[0]
@@ -150,6 +177,14 @@ class DataPreprocessor(object):
         oad.to_csv(save_path, index=False, sep='\t')
 
     def rename_for_txt_library(self, df):
+        """ Rename columns of dataframe for text library
+
+        Args:
+            df (Dataframe): Result metabolite table
+
+        Returns:
+            df (Dataframe): Dataframe with renamed columns
+        """
         df = df.rename(
             columns={
                 'Metabolite name': 'Name', 'Reference m/z': 'MZ',
@@ -160,6 +195,15 @@ class DataPreprocessor(object):
         return df
 
     def check_input_format(self, path, fmt):
+        """ Check data format of inputted dataframe
+
+        Args:
+            path (str): inputted data path
+            fmt (str): Data format (Alignment or PeakList) of inputted data
+
+        Returns:
+            raw_table (Dataframe): Dataframe with renamed columns
+        """
         if fmt == 'Alignment':
             raw_table = pd.read_csv(path, skiprows=[0,1,2,3], sep='\t')
             raw_table = raw_table.rename(columns={'Alignment ID': 'ID'})
@@ -179,6 +223,14 @@ class DataPreprocessor(object):
         return raw_table
     
     def extract_annotated_molecules(self, df):
+        """ Extract annoteted metabolites from metabolite table
+
+        Args:
+            df (Dataframe): Result metabolite table
+
+        Returns:
+            df (Dataframe): Dataframe with annotated metabolites
+        """
         ex_df = df.dropna(subset=['Metabolite name'])
         ex_df = ex_df[ex_df['Metabolite name'] != 'Unknown']
         ex_df = ex_df[~ex_df['Metabolite name'].str.startswith('w/o')]
@@ -188,13 +240,33 @@ class DataPreprocessor(object):
         return ex_df
 
     def exclude_IS(self, df):
+        """ Exclude internal standard information from inputted dataframe
+
+        Args:
+            df (Dataframe): Metabolite table
+
+        Returns:
+            df (Dataframe): Metabolite table excluded I.S. data
+        """
         df = df[~df['Metabolite name'].str.contains('\(d\d+\)')]
         return df
 
     def add_moiety_info(self, df):
-        new_cols = ['chains solved', 'Brutto', 'Total chain', 'Total db', 
-                    'chain-1', 'db-1', 'chain-2', 'db-2', 
-                    'chain-3', 'db-3', 'chain-4', 'db-4']
+        """ Extract annoteted metabolites from metabolite table
+
+        Args:
+            df (Dataframe): Result metabolite table
+
+        Returns:
+            df (Dataframe): Result metabolite table which moiety information 
+            ('chains solved', 'Brutto', 'Total chain', 'Total db', 'chain-1', 
+            'db-1', 'chain-2', 'db-2', 'chain-3', 'db-3', 'chain-4', 'db-4') 
+            were added
+        """
+        new_cols = [
+            'chains solved', 'Brutto', 'Total chain', 'Total db', 'chain-1', 
+            'db-1', 'chain-2', 'db-2', 'chain-3', 'db-3', 'chain-4', 'db-4'
+        ]
         for col in new_cols:
             df[col] = 0 if col != 'chains solved' else False
         annotated_df = self.extract_annotated_molecules(df)
@@ -207,8 +279,9 @@ class DataPreprocessor(object):
             chain, db = int(chain_and_db[0]), int(chain_and_db[1])
             return chain, db
         new_values = []
-        exception_cls = ['CL', 'AHexCer', 'ASM', 
-                         'CerEBDS', 'Cer_EOS', 'HexCer_EOS']
+        exception_cls = [
+            'CL', 'AHexCer', 'ASM', 'CerEBDS', 'Cer_EOS', 'HexCer_EOS'
+        ]
         for name, ontology in zip(names, ontologies):
             solved, brutto, total_chain, total_db = False, 0, 0, 0
             chian_1, db_1, chian_2, db_2, chian_3, db_3, chian_4, db_4 \
@@ -264,15 +337,28 @@ class DataPreprocessor(object):
                 else:
                     brutto = re.findall(r'\d+\:\d+', name)[0]
                     total_chain, total_db = get_chain_and_db(brutto)
-            all_info = [solved, brutto, total_chain, total_db, 
-                        chian_1, db_1, chian_2, db_2, 
-                        chian_3, db_3, chian_4, db_4]
+            all_info = [
+                solved, brutto, total_chain, total_db, chian_1, db_1, chian_2, 
+                db_2, chian_3, db_3, chian_4, db_4
+            ]
             new_values.append(all_info)
             # df.loc[idx:idx, new_cols] = all_info
         df.iloc[idxs, col_pos] = new_values
         return df
 
     def complement_moiety_info(self, raw_neg, raw_pos):
+        """ Complement moiety information to CID data of negative & positive
+            ion mode
+
+        Args:
+            raw_neg (Dataframe): Result metabolite table in negative ion mode
+            raw_pos (Dataframe): Result metabolite table in positive ion mode
+
+        Returns:
+            raw_neg, raw_pos (Dataframe):
+                Result metabolite table which moiety information were 
+                complemented with each polarity data
+        """
         neg = self.extract_annotated_molecules(raw_neg)
         pos = self.extract_annotated_molecules(raw_pos)
         raw_neg['chains complement'], raw_pos['chains complement'] = '', ''
@@ -280,13 +366,15 @@ class DataPreprocessor(object):
         neg, pos = self.exclude_IS(neg), self.exclude_IS(pos)
         # temporary change Brutto of PlasmPE
         pos = self.temp_change_brutto_of_plasm(pos)
-        unsolved_neg = neg[(neg['chains solved'] == False)
-                          |(neg['Ontology'] == 'EtherPE')]
+        unsolved_neg = neg[
+            (neg['chains solved'] == False)|(neg['Ontology'] == 'EtherPE')
+        ]
         unsolved_pos = pos[pos['chains solved'] == False]
-        comple_cols = ['Metabolite name', 'chains solved', 
-                       'chain-1', 'db-1', 'chain-2', 'db-2',
-                       'chain-3', 'db-3', 'chain-4', 'db-4',
-                       'chains complement', 'comple delta RT']
+        comple_cols = [
+            'Metabolite name', 'chains solved', 
+            'chain-1', 'db-1', 'chain-2', 'db-2', 'chain-3', 'db-3', 
+            'chain-4', 'db-4', 'chains complement', 'comple delta RT'
+        ]
         plasm_cols = ['Ontology', 'Brutto', 'Total db']
         def get_abs_delta(rt, f_rt):
             return self.math_floor((abs(rt-f_rt)), 3)
@@ -296,13 +384,16 @@ class DataPreprocessor(object):
             ontology = one['Ontology']
             rt = one['Average Rt(min)']
             if ontology == 'EtherPE':
-                find = pos[((pos['Ontology']==ontology)|(pos['Ontology']=='PlasmPE'))
-                          &(pos['Brutto']==brutto)
-                          &(pos['chains solved']==True)]
+                find = pos[
+                     ((pos['Ontology']==ontology)|(pos['Ontology']=='PlasmPE'))
+                    &(pos['Brutto']==brutto)&(pos['chains solved']==True)
+                ]
             else:
-                find = pos[(pos['Ontology']==ontology)
-                          &(pos['Brutto']==brutto)
-                          &(pos['chains solved']==True)]
+                find = pos[
+                    (pos['Ontology']==ontology)
+                    &(pos['Brutto']==brutto)
+                    &(pos['chains solved']==True)
+                ]
             if len(find) > 1:
                 idxs = list(find.index)
                 f_rts = list(find['Average Rt(min)'].values)
@@ -340,8 +431,9 @@ class DataPreprocessor(object):
             if len(find) > 1:
                 idxs = list(find.index)
                 f_rts = list(find['Average Rt(min)'].values)
-                rt_d = {idx: get_abs_delta(rt, f_rt)
-                        for idx, f_rt in zip(idxs, f_rts)}
+                rt_d = {
+                    idx: get_abs_delta(rt, f_rt) for idx, f_rt in zip(idxs, f_rts)
+                }
                 cand_idx = sorted(rt_d.items(), key=lambda x:x[1])[0][0]
                 cols = list(find.columns)
                 find = find.loc[cand_idx:cand_idx, cols]
@@ -359,11 +451,20 @@ class DataPreprocessor(object):
         #endregion
         #complement triacyl ceramides
         raw_neg, raw_pos = self.complement_triacyl_ceramides(
-                            raw_neg=raw_neg, raw_pos=raw_pos)
+            raw_neg=raw_neg, raw_pos=raw_pos
+        )
         #return result
         return raw_neg, raw_pos
 
     def temp_change_brutto_of_plasm(self, df):
+        """ Modify brutto information for the cases of PlasmPE
+
+        Args:
+            df (Dataframe): Result metabolite table
+
+        Returns:
+            df (Dataframe): Result metabolite table with brutto information
+        """
         plasm_df = df[df['Ontology'] == 'PlasmPE']
         idxs = list(plasm_df.index)
         for idx, chain, db in zip(
@@ -373,23 +474,35 @@ class DataPreprocessor(object):
         return df
 
     def complement_triacyl_ceramides(self, raw_neg, raw_pos):
+        """ Complement moiety information for the cases of triacyl ceramides
+
+        Args:
+            raw_neg (Dataframe): Result metabolite table in negative ion mode
+            raw_pos (Dataframe): Result metabolite table in positive ion mode
+
+        Returns:
+            raw_neg, raw_pos (Dataframe):
+                Result metabolite table which moiety information were 
+                complemented with each polarity data
+        """
         neg = self.extract_annotated_molecules(raw_neg)
         pos = self.extract_annotated_molecules(raw_pos)
         unsolved_neg = neg[neg['chains solved'] == False]
         unsolved_pos = pos[pos['chains solved'] == False]
         f_neg = unsolved_neg[unsolved_neg['Metabolite name'].str.contains('\|')]
         f_pos = unsolved_pos[unsolved_pos['Metabolite name'].str.contains('\|')]
-        cand_neg = f_neg[(f_neg['Ontology']=='Cer_EBDS')
-                        |(f_neg['Ontology']=='Cer_EODS')
-                        |(f_neg['Ontology']=='Cer_EOS')
-                        |(f_neg['Ontology']=='HexCer_EOS')]
-        cand_pos = f_pos[(f_pos['Ontology']=='Cer_EBDS')
-                        |(f_pos['Ontology']=='Cer_EODS')
-                        |(f_pos['Ontology']=='Cer_EOS')
-                        |(f_pos['Ontology']=='HexCer_EOS')]
-        comple_cols = ['Metabolite name', 'chains solved', 'chain-1', 'db-1', 
-                       'chain-2', 'db-2', 'chain-3', 'db-3', 
-                       'chains complement', 'comple delta RT']
+        cand_neg = f_neg[
+            (f_neg['Ontology']=='Cer_EBDS')|(f_neg['Ontology']=='Cer_EODS')
+            |(f_neg['Ontology']=='Cer_EOS')|(f_neg['Ontology']=='HexCer_EOS')
+        ]
+        cand_pos = f_pos[
+            (f_pos['Ontology']=='Cer_EBDS')|(f_pos['Ontology']=='Cer_EODS')
+            |(f_pos['Ontology']=='Cer_EOS')|(f_pos['Ontology']=='HexCer_EOS')
+        ]
+        comple_cols = [
+            'Metabolite name', 'chains solved', 'chain-1', 'db-1', 'chain-2', 
+            'db-2', 'chain-3', 'db-3', 'chains complement', 'comple delta RT'
+        ]
         def get_abs_delta(rt, f_rt):
             return self.math_floor((abs(rt-f_rt)), 3)
         # Neg -> FA, Pos -> Sphingobase
