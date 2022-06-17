@@ -3383,6 +3383,9 @@ class MSRIDD_GUI(tk.Frame):
     #endregion
 
 class BatchSettingWindow(object):
+    """ Definition of class object that constructs setting window 
+        for batch analysis
+    """
     def __init__(self, master):
         self.master = master
         self.batch_setwin = tk.Toplevel(master)
@@ -3398,6 +3401,8 @@ class BatchSettingWindow(object):
         self.files_info = {}
 
     def create_widgets(self):
+        """ Construct widgets on setting window for batch analysis
+        """
         # Project path
         prj_entry_label = ttk.Label(
             self.batch_setwin, text="Project file path :")
@@ -3476,6 +3481,12 @@ class BatchSettingWindow(object):
         self.finish_btn.place(x=580, y=308) 
 
     def create_entry_table(self, paths):
+        """ Construct table including files name and paths on setting window for
+            batch analysis
+
+            Args:
+                pahts (list[str]): list of paths
+        """
         self.inner_canvas = tk.Canvas(self.wrapper_frame, highlightthickness=0)
         label1 = ttk.Label(self.inner_canvas, text='File name')
         label1.grid(row=1, column=1)
@@ -3510,6 +3521,8 @@ class BatchSettingWindow(object):
         # self.inner_canvas.config(scrollregion=(0, 0, 100, y_range))
 
     def get_filepath(self):
+        """ Get project folder path
+        """
         old_path = self.prj_path_entry.get()
         new_path = filedialog.askdirectory(title="Select project folder")
         if new_path == "":
@@ -3520,6 +3533,8 @@ class BatchSettingWindow(object):
             self.prj_path.set(default_path)
 
     def get_alignment_path(self):
+        """ Browse and get alignment data path
+        """
         old_path = self.alignment_entry.get()
         filetype_list = [("text file", "*.txt")]
         new_path = filedialog.askopenfilename(
@@ -3528,6 +3543,8 @@ class BatchSettingWindow(object):
         else: self.alignment_path.set(new_path)
 
     def get_peakid_path(self):
+        """ Browse and get PeakID data path
+        """
         old_path = self.peakid_entry.get()
         filetype_list = [("text file", "*.txt")]
         new_path = filedialog.askopenfilename(
@@ -3536,6 +3553,8 @@ class BatchSettingWindow(object):
         else: self.peakid_path.set(new_path)
 
     def get_peaklists_path(self):
+        """ Browse and get PeakList data path
+        """
         # old_path = self.peakid_entry.get()
         filetype_list = [("text file", "*.txt")]
         peaklists = filedialog.askopenfilenames(
@@ -3544,6 +3563,8 @@ class BatchSettingWindow(object):
             self.create_entry_table(peaklists)
 
     def clear_button(self):
+        """ Clear user inputted paths (project folder, alignment data and peakid)
+        """
         self.prj_path.set("")
         self.alignment_path.set("")
         self.peakid_path.set("")
@@ -3554,6 +3575,12 @@ class BatchSettingWindow(object):
         # self.sample_name.set("")
 
     def center_position(self, win, width, height):
+        """ Set window geometry of setting window for batch analysis
+        Args:
+            win (class object): MSRIDD_GUI (tk.Frame)
+            width (int) : Width of Monitor
+            height (int): Height of Monitor
+        """
         x = (win.winfo_screenwidth() // 2) - (width // 2)
         y = (win.winfo_screenheight() // 2) - (height // 2)
         win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
@@ -3562,7 +3589,14 @@ class BatchSettingWindow(object):
         self.batch_setwin.destroy()
 
 class ProgressBar(object):
+    """ Definition of class object that constructs prgress bar
+        for analysis
+    """
     def __init__(self, master, title, detail):
+        """Args:
+            title (str): title text
+            detail (str): process message
+        """
         self.prgbar_win = tk.Toplevel(master)
         self.prgbar_win.attributes('-topmost', True)
         self.center_position(self.prgbar_win, width=690, height=110)
@@ -3574,18 +3608,33 @@ class ProgressBar(object):
         self.create_prgbar_widgets(detail)
 
     def center_position(self, win, width, height):
+        """ Set window geometry of progress bar
+        Args:
+            win (class object): MSRIDD_GUI (tk.Frame)
+            width (int) : Width of Monitor
+            height (int): Height of Monitor
+        """
         x = (win.winfo_screenwidth() // 2) - (width // 2)
         y = (win.winfo_screenheight() // 2) - (height // 2)
         win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
 
     def create_prgbar_widgets(self, detail):
+        """ Construct progress bar
+        Args:
+            detail (text): report message
+        """
         # Progressbar
-        self.prgbar = ttk.Progressbar(self.prgbar_win, orient='horizontal', length=630, mode='indeterminate')
+        self.prgbar = ttk.Progressbar(
+            self.prgbar_win, orient='horizontal', length=630, 
+            mode='indeterminate'
+        )
         self.prgbar.place(x=30, y=30)
         self.prgbar.configure(value=0, maximum=100)
         self.prgbar_report = tk.StringVar()
         self.prgbar_report.set(detail)
-        prgbar_label = ttk.Label(self.prgbar_win, textvariable=self.prgbar_report, font=("", 14))
+        prgbar_label = ttk.Label(
+            self.prgbar_win, textvariable=self.prgbar_report, font=("", 14)
+        )
         prgbar_label.place(x=30, y=55)
         self.prgbar.start(interval=10)
 
@@ -3593,7 +3642,17 @@ class ProgressBar(object):
         self.prgbar_win.destroy()
 
 class TwoPathImporter(object):
+    """ Definition of class object that import two data paths
+    """
     def __init__(self, master, title, type1, type2, fmt1, fmt2):
+        """
+        Args:
+            title (str): title text of window
+            type1 (str): data name1
+            type2 (str): data name2
+            fmt1 (str): name of method mode
+            fmt2 (str): name of method mode
+        """
         self.master = master
         self.type1, self.type2 = type1, type2
         self.fmt1, self.fmt2 = fmt1, fmt2
@@ -3607,35 +3666,54 @@ class TwoPathImporter(object):
         self.two_path_imp_win.iconphoto(False, tk.PhotoImage(file=IconPath))
         self.create_widgets()
         self.process_done = False
-        self.two_path_imp_win.protocol('WM_DELETE_WINDOW', 
-            lambda : self.close_window())
+        self.two_path_imp_win.protocol(
+            'WM_DELETE_WINDOW', lambda : self.close_window()
+        )
 
     def create_widgets(self):
+        """ Construct widgets on setting window for two paths importer
+        """
         # path1
         label1 = ttk.Label(self.two_path_imp_win, text=self.type1+' :')
         label1.place(x=30, y=20)
         self.path1 = tk.StringVar()
-        self.path1_entry = ttk.Entry(self.two_path_imp_win, textvariable=self.path1, width=72)
+        self.path1_entry = ttk.Entry(
+            self.two_path_imp_win, textvariable=self.path1, width=72
+        )
         self.path1_entry.place(x=120, y=20)
-        self.path1_btn = ttk.Button(self.two_path_imp_win, text="Select", command=self.get_path1)
+        self.path1_btn = ttk.Button(
+            self.two_path_imp_win, text="Select", command=self.get_path1
+        )
         self.path1_btn.place(x=580, y=18)
         # path2
         label2 = ttk.Label(self.two_path_imp_win, text=self.type2+' :')
         label2.place(x=30, y=60)
         self.path2 = tk.StringVar()
-        self.path2_entry = ttk.Entry(self.two_path_imp_win, textvariable=self.path2, width=72)
+        self.path2_entry = ttk.Entry(
+            self.two_path_imp_win, textvariable=self.path2, width=72
+        )
         self.path2_entry.place(x=120, y=60)
-        self.path2_btn = ttk.Button(self.two_path_imp_win, text="Select", command=self.get_path2)
+        self.path2_btn = ttk.Button(
+            self.two_path_imp_win, text="Select", command=self.get_path2
+        )
         self.path2_btn.place(x=580, y=58)
         # Data format1
-        dataformat_label = ttk.Label(self.two_path_imp_win, text="Data format :")
+        dataformat_label = ttk.Label(
+            self.two_path_imp_win, text="Data format :"
+        )
         dataformat_label.place(x=30, y=103)
         format_label1 = ttk.Label(self.two_path_imp_win, text=self.fmt1)
         format_label1.place(x=120, y=103)
         self.format1 = tk.StringVar()
         self.format1.set("")
-        self.data1_rbtn1 = ttk.Radiobutton(self.two_path_imp_win, text="PeakList", value="PeakList", variable=self.format1)
-        self.data1_rbtn2 = ttk.Radiobutton(self.two_path_imp_win, text="Alignment", value="Alignment", variable=self.format1)
+        self.data1_rbtn1 = ttk.Radiobutton(
+            self.two_path_imp_win, text="PeakList", value="PeakList", 
+            variable=self.format1
+        )
+        self.data1_rbtn2 = ttk.Radiobutton(
+            self.two_path_imp_win, text="Alignment", value="Alignment", 
+            variable=self.format1
+        )
         self.data1_rbtn1.place(x=145, y=102)
         self.data1_rbtn2.place(x=215, y=102)
         # Data format2
@@ -3643,36 +3721,60 @@ class TwoPathImporter(object):
         format_label2.place(x=330, y=103)
         self.format2 = tk.StringVar()
         self.format2.set("")
-        self.data2_rbtn1 = ttk.Radiobutton(self.two_path_imp_win, text="PeakList", value="PeakList", variable=self.format2)
-        self.data2_rbtn2 = ttk.Radiobutton(self.two_path_imp_win, text="Alignment", value="Alignment", variable=self.format2)
+        self.data2_rbtn1 = ttk.Radiobutton(
+            self.two_path_imp_win, text="PeakList", value="PeakList", 
+            variable=self.format2
+        )
+        self.data2_rbtn2 = ttk.Radiobutton(
+            self.two_path_imp_win, text="Alignment", value="Alignment", 
+            variable=self.format2
+        )
         self.data2_rbtn1.place(x=360, y=102)
         self.data2_rbtn2.place(x=430, y=102)
         # Start Button
-        self.finish_btn = ttk.Button(self.two_path_imp_win, 
-            text="Start", command=self.check_input_data_path)
+        self.finish_btn = ttk.Button(
+            self.two_path_imp_win, text="Start", 
+            command=self.check_input_data_path
+        )
         self.finish_btn.place(x=580, y=100) 
     
     def check_input_data_path(self):
+        """ Check input data paths and those of data format
+        """
         path1 = self.path1_entry.get()
         format1 = self.format1.get()
         path2 = self.path2_entry.get()
         format2 = self.format2.get()
         if path1 == "":
-            messagebox.showwarning("Empty input data", "Please select {} file".format(self.type1))
+            messagebox.showwarning(
+                "Empty input data", "Please select {} file".format(self.type1)
+            )
         elif format1 == "":
-            messagebox.showwarning("Select data format", "Please select {} file format".format(self.type1))
+            messagebox.showwarning(
+                "Select data format", 
+                "Please select {} file format".format(self.type1)
+            )
         elif path2 == "":
-            messagebox.showwarning("Empty input data", "Please select {} file".format(self.type2))
+            messagebox.showwarning(
+                "Empty input data", "Please select {} file".format(self.type2)
+            )
         elif format2 == "":
-            messagebox.showwarning("Select data format", "Please select {} file format".format(self.type2))
+            messagebox.showwarning(
+                "Select data format", 
+                "Please select {} file format".format(self.type2)
+            )
         else:
-            thread_1 = threading.Thread(target=self.create_preprocess_prgbar_window)
+            thread_1 = threading.Thread(
+                target=self.create_preprocess_prgbar_window
+            )
             thread_2 = threading.Thread(target=self.generate_input_data)
             thread_1.start()
             thread_2.start()
             self.process_done = False
 
     def create_preprocess_prgbar_window(self):
+        """ Construct progress bar
+        """
         # logging.debug('create_preprocess_prgbar_window -> Start')
         self.temp_prgbar = ProgressBar(self.master,
             title="Data preprocess in progress", 
@@ -3683,6 +3785,8 @@ class TwoPathImporter(object):
         # logging.debug('create_preprocess_prgbar_window -> End')
 
     def generate_input_data(self):
+        """ Get input data paths and those of data format and start merging data
+        """
         # logging.debug('generate_input_data -> Start')
         path1 = self.path1_entry.get()
         format1 = self.format1.get()
@@ -3699,33 +3803,50 @@ class TwoPathImporter(object):
                 data_preprocessor.merge_cid_and_oad_data()
         except Exception as e:
             self.temp_prgbar.prgbar_report.set("--- Error occurred ---")
-            messagebox.showwarning("Error message", "Error has occurred while the data preprocess, please confirm input data.")
+            messagebox.showwarning(
+                "Error message", 
+                "Error has occurred while the data preprocess, please confirm input data."
+            )
             messagebox.showwarning("Error details", "{}".format(e))
             traceback.print_exc()
         self.process_done = True
         # logging.debug('generate_input_data -> End')
 
     def get_path1(self):
+        """ Get input data path
+        """
         old_path = self.path1_entry.get()
         filetype_list = [("text file", "*.txt")]
-        new_path = filedialog.askopenfilename(filetypes=filetype_list, 
-            title="Select {} file".format(self.type1))
+        new_path = filedialog.askopenfilename(
+            filetypes=filetype_list, 
+            title="Select {} file".format(self.type1)
+        )
         if new_path == "":
             self.path1.set(old_path)
         else:
             self.path1.set(new_path)
 
     def get_path2(self):
+        """ Get input data path
+        """
         old_path = self.path2_entry.get()
         filetype_list = [("text file", "*.txt")]
-        new_path = filedialog.askopenfilename(filetypes=filetype_list, 
-            title="Select {} file".format(self.type2))
+        new_path = filedialog.askopenfilename(
+            filetypes=filetype_list, 
+            title="Select {} file".format(self.type2)
+        )
         if new_path == "":
             self.path2.set(old_path)
         else:
             self.path2.set(new_path)
 
     def center_position(self, win, width, height):
+        """ Set window geometry of setting window for two paths importer
+        Args:
+            win (class object): MSRIDD_GUI (tk.Frame)
+            width (int) : Width of Monitor
+            height (int): Height of Monitor
+        """
         x = (win.winfo_screenwidth() // 2) - (width // 2)
         y = (win.winfo_screenheight() // 2) - (height // 2)
         win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
@@ -3734,7 +3855,14 @@ class TwoPathImporter(object):
         self.two_path_imp_win.destroy()
 
 class PopUpWindow(object):
+    """ Definition of class object that construct pop-up window
+    """
     def __init__(self, master, title, message):
+        """
+        Args:
+            title (str): title text of window
+            message (str): message text
+        """
         self.master = master
         self.popup_win = tk.Toplevel(master)
         self.popup_win.attributes('-topmost', False)
@@ -3746,6 +3874,12 @@ class PopUpWindow(object):
         label.pack(anchor='center', expand=1)
 
     def center_position(self, win, width, height):
+        """ Set window geometry of pop-up window
+        Args:
+            win (class object): MSRIDD_GUI (tk.Frame)
+            width (int) : Width of Monitor
+            height (int): Height of Monitor
+        """
         x = (win.winfo_screenwidth() // 2) - (width // 2)
         y = (win.winfo_screenheight() // 2) - (height // 2)
         win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
@@ -3754,7 +3888,14 @@ class PopUpWindow(object):
         self.popup_win.destroy()
 
 class ReAnalysisWindow(object):
+    """ Definition of class object that construct re-analysis window
+    """
     def __init__(self, master, name, info):
+        """
+        Args:
+            name (str): metabolite name
+            info (dict): dictionary containing lipid structure information
+        """
         self.master = master
         self.metabolite_name = name
         self.structure_info = info
@@ -3768,6 +3909,8 @@ class ReAnalysisWindow(object):
         self.create_widgets()
 
     def create_widgets(self):
+        """ Construct widgets on setting window for re-analysis
+        """
         txt = f'Metabolite name : {self.metabolite_name}'
         chain1, chain2, chain3, lock1, lock2, lock3 \
             = self.check_unsaturated_moiety()
@@ -3782,22 +3925,21 @@ class ReAnalysisWindow(object):
         title1 = ttk.Label(flame1, text=f'moiety-1: {chain1}', font=("", 13))
         title1.place(relx=0.5, rely=0.05, anchor='center')
         self.text1 = scrolledtext.ScrolledText(flame1, font=(None, 14))
-        self.text1.place(
-            relx=0.05, rely=0.2, relwidth=0.9, relheight=0.7)
+        self.text1.place(relx=0.05, rely=0.2, relwidth=0.9, relheight=0.7)
         title2 = ttk.Label(flame2, text=f'moiety-2: {chain2}', font=("", 13))
         title2.place(relx=0.5, rely=0.05, anchor='center')
         self.text2 = scrolledtext.ScrolledText(flame2, font=(None, 14))
-        self.text2.place(
-            relx=0.05, rely=0.2, relwidth=0.9, relheight=0.7)
+        self.text2.place(relx=0.05, rely=0.2, relwidth=0.9, relheight=0.7)
         title3 = ttk.Label(flame3, text=f'moiety-3: {chain3}', font=("", 13))
         title3.place(relx=0.5, rely=0.05, anchor='center')
         self.text3 = scrolledtext.ScrolledText(flame3, font=(None, 14))
-        self.text3.place(
-            relx=0.05, rely=0.2, relwidth=0.9, relheight=0.7)
+        self.text3.place(relx=0.05, rely=0.2, relwidth=0.9, relheight=0.7)
 
-        notice_txt = ("* Set C=C position as (6,9,12,15). "
-                     +"Multiple candidates must be \n   "
-                     +"written in each line.")
+        notice_txt = (
+            "* Set C=C position as (6,9,12,15). "
+            +"Multiple candidates must be \n   "
+            +"written in each line."
+        )
         notice = ttk.Label(self.window, text=notice_txt)
         notice.place(relx=0.01, rely=0.8, relwidth=0.65)
         self.start_btn = ttk.Button(self.window, text="Start")
@@ -3807,6 +3949,12 @@ class ReAnalysisWindow(object):
         self.lock_text(lock1, lock2, lock3)
 
     def check_unsaturated_moiety(self):
+        """ Check how many moieties are unsaturated in the target metabolite
+
+        Returns:
+            chain1, chain2, chain3 (str): ex.) 20:4
+            lock1, lock2, lock3 (bool): wheter moiety is unsaturated or not
+        """
         def get_moiety_str(c_num, db):
             b = False if db > 0 else True
             return f'{c_num}:{db}', b
@@ -3826,10 +3974,19 @@ class ReAnalysisWindow(object):
         is_sph = check_lipid_category('Sphingolipids', ontology)
         if is_sph:
             chain1, chain2, chain3 = self.refine_sph_structure(
-                chain1, chain2, chain3)
+                chain1, chain2, chain3
+            )
         return chain1, chain2, chain3, lock1, lock2, lock3
 
     def refine_sph_structure(self, chain1, chain2, chain3):
+        """ Check sphingois base structure
+
+        Args:
+            chain1, chain2, chain3 (str): ex.) 20:4
+        
+        Returns:
+            chain1, chain2, chain3 (str): ex.) 20:4
+        """
         ox_num = re.findall(r';\dO', self.metabolite_name)[0]
         chain1 = f'{chain1}{ox_num}'
         if 'O-' in self.metabolite_name:
@@ -3837,6 +3994,11 @@ class ReAnalysisWindow(object):
         return chain1, chain2, chain3
 
     def lock_text(self, lock1, lock2, lock3):
+        """ Lock text area in case of saturated moiety
+
+        Args:
+            lock1, lock2, lock3 (bool): wheter moiety is unsaturated or not
+        """
         lock_color = '#dcdcdc'
         if lock1:
             self.text1['state'] = tk.DISABLED
@@ -3849,6 +4011,12 @@ class ReAnalysisWindow(object):
             self.text3['bg'] = lock_color
 
     def center_position(self, win, width, height):
+        """ Set window geometry of setting window for re-analysis
+        Args:
+            win (class object): MSRIDD_GUI (tk.Frame)
+            width (int) : Width of Monitor
+            height (int): Height of Monitor
+        """
         x = (win.winfo_screenwidth() // 2) - (width // 2)
         y = (win.winfo_screenheight() // 2) - (height // 2)
         win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
@@ -3857,7 +4025,14 @@ class ReAnalysisWindow(object):
         self.window.destroy()
 
 class VerticalProgressBars(object):
+    """ Definition of class object that construct vertical mode of progress bar
+    """
     def __init__(self, master, title, start_text):
+        """
+        Args:
+            title (str): title text
+            start_text (srt): message text
+        """
         self.vert_prgbars_win = tk.Toplevel(master)
         self.vert_prgbars_win.attributes('-topmost', True)
         self.center_position(self.vert_prgbars_win, width=690, height=155)
@@ -3866,18 +4041,27 @@ class VerticalProgressBars(object):
         self.vert_prgbars_win.grab_set()
         self.vert_prgbars_win.iconphoto(False, tk.PhotoImage(file=IconPath))
         self.vert_prgbars_win.protocol(
-            'WM_DELETE_WINDOW', lambda : self.close_window())
+            'WM_DELETE_WINDOW', lambda : self.close_window()
+        )
         self.start_text = start_text
         self.create_widgets()
         self.running = True
         # self.process_timer()
 
     def center_position(self, win, width, height):
+        """ Set window geometry of vertical mode of progess bar
+        Args:
+            win (class object): MSRIDD_GUI (tk.Frame)
+            width (int) : Width of Monitor
+            height (int): Height of Monitor
+        """
         x = (win.winfo_screenwidth() // 2) - (width // 2)
         y = (win.winfo_screenheight() // 2) - (height // 2)
         win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
 
     def create_widgets(self):
+        """ Construct widgets on vertical mode of progress bar
+        """
         # Section Bar
         self.section_bar = ttk.Progressbar(self.vert_prgbars_win, 
             orient='horizontal', length=534, mode='determinate')
@@ -3907,6 +4091,8 @@ class VerticalProgressBars(object):
         self.small_timer = tk.StringVar()
 
     def process_timer(self):
+        """ Reflect current time on progress bar
+        """
         hour = 0
         minute = 0
         second = 0
@@ -3937,6 +4123,10 @@ def math_floor(num, digit):
     return floored
 
 def get_timestamp():
+    """ 
+    Returns:
+        timestamp (str): prefix of current time for data name
+    """
     dt_now = datetime.datetime.now()
     idx = str(dt_now).find('.') +1
     stamp = str(dt_now)[:idx].replace('-', '').replace(' ', '_').replace('.', 's')
@@ -3944,6 +4134,15 @@ def get_timestamp():
     return timestamp
 
 def check_lipid_category(category, target):
+    """ Check whether inputted lipid subclass is included in the category
+
+    Args:
+        category (str): Lipid category
+        target (str): Lipid subclass
+
+    Returns:
+        bool: whether inputted lipid subclass is included the target category
+    """
     lipidclass_dict =  {
         'Fatty acyls': ['FA', 'NAGly', 'NAGlySer', 'NAOrn', 'NAE', 'CAR', 
                         'FAHFA'],
@@ -4000,6 +4199,17 @@ def check_lipid_category(category, target):
 #region Text format exporter
 def text_sheet_exporter(path, target_table, cid, oad, structure_info, 
     normalized, stamp):
+    """ Export result data as text format
+
+    Args:
+        path (str): export path
+        target_table (Dataframe): result metabolite table
+        cid (dict): dictionary containing CID fragmentation ions
+        oad (ditc): dictionary containing OAD fragmentation ions
+        structure_info (dict): dict generated by extract_lipid_structural_info
+        normalized (bool): whether the data is normalized
+        stamp (str): prefix containing timestamp
+    """
     ion_v_col = 'pmol/mg tissue' if normalized else 'Height'
     idxs = target_table['ID'].values
     alignment_ids = [-1 for _ in range(len(idxs))]
@@ -4007,34 +4217,40 @@ def text_sheet_exporter(path, target_table, cid, oad, structure_info,
         alignment_ids = target_table['Alignment ID'].values
     moiety_info = [fill_in_oad_result_on_summary_df(i, oad[idx]) 
                    for i, idx in enumerate(idxs)]
-    data_d = {'ID': target_table['ID'].values, 
-              'RT': target_table['RT(min)'].values, 
-              'MS1 m/z': target_table['Precursor m/z'].values, 
-              'Ref m/z': [structure_info[i]['Ref precursor Mz'] 
-                          for i in idxs], 
-              'Precise m/z': target_table['Precise m/z'].values, 
-              'm/z type': target_table['Precise m/z type'].values, 
-              'Metabolite name': target_table['Metabolite name'].values, 
-              'OAD result name': target_table['OAD result name'].values, 
-              'Comment': target_table['User comment'].values, 
-              'Data from': target_table['Data from'].values, 
-              ion_v_col: target_table[ion_v_col].values, 
-              'Manually changed': [v[3] for v in moiety_info], 
-              'Moiety1 Result': [v[0] for v in moiety_info], 
-              'Moiety2 Result': [v[1] for v in moiety_info], 
-              'Moiety3 Result': [v[2] for v in moiety_info], 
-              'Moiety1 resolved': [v[4] for v in moiety_info], 
-              'Moiety2 resolved': [v[5] for v in moiety_info], 
-              'Moiety3 resolved': [v[6] for v in moiety_info],
-              'C=C in Moiety1': [v[7] for v in moiety_info], 
-              'C=C in Moiety2': [v[8] for v in moiety_info], 
-              'C=C in Moiety3': [v[9] for v in moiety_info], 
-              'Ontology': target_table['Ontology'].values, 
-              'Heads': [cid[i]['Lipid subclass']['Presence'] 
-                        if cid[i]['Lipid subclass'] else 0 for i in idxs], 
-              'Moiety': [cid[i]['Moiety']['Presence'] 
-                         if cid[i]['Moiety'] else 0 for i in idxs], 
-              'Alignment ID': alignment_ids}
+    data_d = {
+        'ID': target_table['ID'].values, 
+        'RT': target_table['RT(min)'].values, 
+        'MS1 m/z': target_table['Precursor m/z'].values, 
+        'Ref m/z': [
+            structure_info[i]['Ref precursor Mz'] for i in idxs
+        ], 
+        'Precise m/z': target_table['Precise m/z'].values, 
+        'm/z type': target_table['Precise m/z type'].values, 
+        'Metabolite name': target_table['Metabolite name'].values, 
+        'OAD result name': target_table['OAD result name'].values, 
+        'Comment': target_table['User comment'].values, 
+        'Data from': target_table['Data from'].values, 
+        ion_v_col: target_table[ion_v_col].values, 
+        'Manually changed': [v[3] for v in moiety_info], 
+        'Moiety1 Result': [v[0] for v in moiety_info], 
+        'Moiety2 Result': [v[1] for v in moiety_info], 
+        'Moiety3 Result': [v[2] for v in moiety_info], 
+        'Moiety1 resolved': [v[4] for v in moiety_info], 
+        'Moiety2 resolved': [v[5] for v in moiety_info], 
+        'Moiety3 resolved': [v[6] for v in moiety_info],
+        'C=C in Moiety1': [v[7] for v in moiety_info], 
+        'C=C in Moiety2': [v[8] for v in moiety_info], 
+        'C=C in Moiety3': [v[9] for v in moiety_info], 
+        'Ontology': target_table['Ontology'].values, 
+        'Heads': [
+            cid[i]['Lipid subclass']['Presence'] 
+            if cid[i]['Lipid subclass'] else 0 for i in idxs
+        ], 
+        'Moiety': [
+            cid[i]['Moiety']['Presence'] if cid[i]['Moiety'] else 0 for i in idxs
+        ], 
+        'Alignment ID': alignment_ids
+    }
     summary_df = pd.DataFrame(data_d, index=range(len(target_table)))
     summary_df = summary_df.dropna(how='all')
     excel_path = path + '/' + stamp + '_MSRIDD_Analysis_Result.txt'
@@ -4044,7 +4260,13 @@ def text_sheet_exporter(path, target_table, cid, oad, structure_info,
 #region Excel exporter
 def find_null_cell(excel_sheet):
     """ Find null cell in excel sheet to add new value. 
-        Return null cell position """
+    
+    Args:
+        excel_sheet (openpyxl.sheet) :excel sheet data
+
+    Returns:
+        column_count (int): null cell position
+    """
     column_count = 1
     while True:
         if excel_sheet.cell(row=8, column=column_count).value == None:
@@ -4053,6 +4275,18 @@ def find_null_cell(excel_sheet):
             column_count += 1
 
 def write_dataframe_into_excel_sheet(sheet, df, msms_df, cid, oad, lipid_info):
+    """ Write result data into excel sheet
+    
+    Args:
+        df (Dataframe): Analysis result table
+        msms_df (Dataframe): Extracted OAD-MS/MS spectra
+        cid (dict): dictionary containing CID fragmentation ions
+        oad (ditc): dictionary containing OAD fragmentation ions
+        lipid_info (dict): dict generated by extract_lipid_structural_info
+
+    Returns:
+        sheet (openpyxl.sheet): data written excel sheet
+    """
     #region lipid_info structure
     # lipid_structural_dict = {'Status': '', 'Adduct': '', 'Precursor Mz': 0, 'MS2 Mz': 0,
     #                          'Precise precursor Mz': '', 'Ref precursor Mz': 0, 
@@ -4364,6 +4598,22 @@ def write_dataframe_into_excel_sheet(sheet, df, msms_df, cid, oad, lipid_info):
 
 def excel_sheet_exporter2(path, target_table, msms, cid, oad, structure_info, 
     normalized, stamp, each_bar, each_rep):
+    """ Export result data as excel sheet format
+    
+    Args:
+        target_table (Dataframe): Analysis result table
+        msms (Dataframe): Extracted OAD-MS/MS spectra
+        cid (dict): dictionary containing CID fragmentation ions
+        oad (ditc): dictionary containing OAD fragmentation ions
+        lipid_info (dict): dict generated by extract_lipid_structural_info
+        normalized (bool): whether the data is normalized
+        stamp (str): prefix containing timestamp
+        each_bar (class object): ttk.Progressbar
+        each_rep (calss object): tk.StringVar
+
+    Returns:
+        sheet (openpyxl.sheet): data written excel sheet
+    """
     #region CID result dict structure
     # cid_dict = {'Lipid subclass': {'Glycine': [ref_mz, measured_mz, ppm],
     #                                'Presence': 50.00},
@@ -4403,36 +4653,43 @@ def excel_sheet_exporter2(path, target_table, msms, cid, oad, structure_info,
     alignment_ids = [-1 for _ in range(len(idxs))]
     if 'Alignment ID' in target_table.columns:
         alignment_ids = target_table['Alignment ID'].values
-    moiety_info = [fill_in_oad_result_on_summary_df(i, oad[idx]) 
-                   for i, idx in enumerate(idxs)]
-    data_d = {'ID': target_table['ID'].values, 
-              'RT': target_table['RT(min)'].values, 
-              'MS1 m/z': target_table['Precursor m/z'].values, 
-              'Ref m/z': [structure_info[i]['Ref precursor Mz'] 
-                          for i in idxs], 
-              'Precise m/z': target_table['Precise m/z'].values, 
-              'm/z type': target_table['Precise m/z type'].values, 
-              'Metabolite name': target_table['Metabolite name'].values, 
-              'OAD result name': target_table['OAD result name'].values, 
-              'Comment': target_table['User comment'].values, 
-              'Data from': target_table['Data from'].values, 
-              ion_v_col: target_table[ion_v_col].values, 
-              'Manually changed': [v[3] for v in moiety_info], 
-              'Moiety1 Result': [v[0] for v in moiety_info], 
-              'Moiety2 Result': [v[1] for v in moiety_info], 
-              'Moiety3 Result': [v[2] for v in moiety_info], 
-              'Moiety1 resolved': [v[4] for v in moiety_info], 
-              'Moiety2 resolved': [v[5] for v in moiety_info], 
-              'Moiety3 resolved': [v[6] for v in moiety_info],
-              'C=C in Moiety1': [v[7] for v in moiety_info], 
-              'C=C in Moiety2': [v[8] for v in moiety_info], 
-              'C=C in Moiety3': [v[9] for v in moiety_info], 
-              'Ontology': target_table['Ontology'].values, 
-              'Heads': [cid[i]['Lipid subclass']['Presence'] 
-                        if cid[i]['Lipid subclass'] else 0 for i in idxs], 
-              'Moiety': [cid[i]['Moiety']['Presence'] 
-                         if cid[i]['Moiety'] else 0 for i in idxs], 
-              'Alignment ID': alignment_ids}
+    moiety_info = [
+        fill_in_oad_result_on_summary_df(i, oad[idx]) for i, idx in enumerate(idxs)
+    ]
+    data_d = {
+        'ID': target_table['ID'].values, 
+        'RT': target_table['RT(min)'].values, 
+        'MS1 m/z': target_table['Precursor m/z'].values, 
+        'Ref m/z': [
+            structure_info[i]['Ref precursor Mz'] for i in idxs
+        ], 
+        'Precise m/z': target_table['Precise m/z'].values, 
+        'm/z type': target_table['Precise m/z type'].values, 
+        'Metabolite name': target_table['Metabolite name'].values, 
+        'OAD result name': target_table['OAD result name'].values, 
+        'Comment': target_table['User comment'].values, 
+        'Data from': target_table['Data from'].values, 
+        ion_v_col: target_table[ion_v_col].values, 
+        'Manually changed': [v[3] for v in moiety_info], 
+        'Moiety1 Result': [v[0] for v in moiety_info], 
+        'Moiety2 Result': [v[1] for v in moiety_info], 
+        'Moiety3 Result': [v[2] for v in moiety_info], 
+        'Moiety1 resolved': [v[4] for v in moiety_info], 
+        'Moiety2 resolved': [v[5] for v in moiety_info], 
+        'Moiety3 resolved': [v[6] for v in moiety_info],
+        'C=C in Moiety1': [v[7] for v in moiety_info], 
+        'C=C in Moiety2': [v[8] for v in moiety_info], 
+        'C=C in Moiety3': [v[9] for v in moiety_info], 
+        'Ontology': target_table['Ontology'].values, 
+        'Heads': [
+            cid[i]['Lipid subclass']['Presence'] 
+            if cid[i]['Lipid subclass'] else 0 for i in idxs
+        ], 
+        'Moiety': [
+            cid[i]['Moiety']['Presence'] if cid[i]['Moiety'] else 0 for i in idxs
+        ], 
+        'Alignment ID': alignment_ids
+    }
     # table_range = range(len(target_table))
     summary_df = pd.DataFrame(data_d, index=range(len(target_table)))
     total = len(target_table)
@@ -4450,11 +4707,13 @@ def excel_sheet_exporter2(path, target_table, msms, cid, oad, structure_info,
         else:
             sheet = wb.create_sheet(title=new_ontology_candidate)
         sheet.freeze_panes = 'A9'
-        sheet = write_dataframe_into_excel_sheet(sheet=sheet, 
-            df=df, msms_df=msms_df, cid=cid_result, oad=oad_result, 
-            lipid_info=lipid_info)
+        sheet = write_dataframe_into_excel_sheet(
+            sheet=sheet, df=df, msms_df=msms_df, cid=cid_result, oad=oad_result, 
+            lipid_info=lipid_info
+        )
         each_rep.set(
-            f'Exporting {i+1}/{total} >>> {time.time()-start:.3f} [sec]')
+            f'Exporting {i+1}/{total} >>> {time.time()-start:.3f} [sec]'
+        )
         each_bar.step(1)
     each_bar.step(0.99)
     each_rep.set(f'Saving files...')
@@ -4470,6 +4729,7 @@ def excel_sheet_exporter2(path, target_table, msms, cid, oad, structure_info,
     excel_path = path + '/' + stamp + '_MSRIDD_Analysis_Report.xlsx'
     wb.save(filename=excel_path)
 
+#region Not used function
 def excel_sheet_exporter(path, target_table, msms, cid, oad, structure_info, 
     normalized, stamp):
     #region CID result dict structure
@@ -4562,8 +4822,19 @@ def excel_sheet_exporter(path, target_table, msms, cid, oad, structure_info,
     del wb['Sheet']
     excel_path = path + '/' + stamp + '_MSRIDD_Analysis_Report.xlsx'
     wb.save(filename=excel_path)
+#endregion
 
 def check_max_col_in_sheet(wb, sheetname, num, counter=1):
+    """ Check maximum position of current excel sheet
+    
+    Args:
+        wb (openpyxl.workbook): excel sheet
+        sheetname (str): name of excel sheet
+        num (int): number of maximum column position
+
+    Returns:
+        sheetname (str): sheet name
+    """
     sheet = wb.get_sheet_by_name(sheetname)
     max_col = sheet.max_column
     if max_col > 16300:
@@ -4578,6 +4849,18 @@ def check_max_col_in_sheet(wb, sheetname, num, counter=1):
     return sheetname
 
 def fill_in_oad_result_on_summary_df(row, oad_result):
+    """ Fill in moiety information from OAD result into excel cell 
+    
+    Args:
+        oad_result (dict): dictionary containing OAD fragmentation ions
+
+    Returns:
+        moiety_1_result, moiety_2_result, moiety_3_result (str):
+            Moiety information
+        manually_changed (str): whether annotation is manually changed
+        resolved_1~3 (str): whether moieties are resolved or not
+        db_1, db_2, db_3 (str): N-terminal description of C=C position
+    """
     #region Return values
     # ['Moiety1 Result', 'Moiety2 Result', 'Moiety3 Result', 'Manually changed', 
     #  'Moiety1 resolved', 'Moiety2 resolved', 'Moiety3 resolved', 
@@ -4706,6 +4989,20 @@ def fill_in_oad_result_on_summary_df(row, oad_result):
 #region PowerPoint exporter
 def generate_msms_figures(path, msms_dict, cid, oad, structure_info, graph, 
     stamp, each_bar, each_rep):
+    """ Generate figures of OAD-MS/MS spectra as image format
+    
+    Args:
+        path (str): Export data path
+        msms (Dataframe): Extracted OAD-MS/MS spectra
+        cid (dict): dictionary containing CID fragmentation ions
+        oad (ditc): dictionary containing OAD fragmentation ions
+        structure_info (dict): dict generated by extract_lipid_structural_info
+        graph (dict):
+            dictionary containing information for visualizing OAD-MS/MS spectra
+        stamp (str): prefix containing timestamp
+        each_bar (class object): ttk.Progressbar
+        each_rep (calss object): tk.StringVar
+    """
     #region base settings
     dpi_setting = 300
     fig_x, fig_y = 4.8, 2.4
@@ -4901,6 +5198,15 @@ def generate_msms_figures(path, msms_dict, cid, oad, structure_info, graph,
         #endregion
 
 def save_msms_fig_as_pptx(path, stamp, target_table, each_bar, each_rep):
+    """ Save figures of OAD-MS/MS spectra into pptx format
+    
+    Args:
+        path (str): Export data path
+        stamp (str): Prefix containing timestamp
+        target_table (Dataframe): Result table
+        each_bar (class object): ttk.Progressbar
+        each_rep (calss object): tk.StringVar
+    """
     tempfiles_path = f'{path}/{stamp}_tempfiles'
     ppt = pptx.Presentation()
     ppt_width = ppt.slide_width
@@ -4919,15 +5225,18 @@ def save_msms_fig_as_pptx(path, stamp, target_table, each_bar, each_rep):
             oad_result_name = target_table['Metabolite name'][extracted_index[0]]
         slide = ppt.slides.add_slide(blank_slide_layout)
         pic = slide.shapes.add_picture(
-            each_images, 0, 0, ppt_width, ppt_width*9/16)
+            each_images, 0, 0, ppt_width, ppt_width*9/16
+        )
         pic.left = int((ppt_width - pic.width)/2)
         pic.top = int((ppt_height - pic.height)/2)
         txt_box = slide.shapes.add_textbox(
-            txt_left, txt_top, txt_width*30, txt_height*2)
+            txt_left, txt_top, txt_width*30, txt_height*2
+        )
         txt_frame = txt_box.text_frame
         txt_frame.text = 'ID' + str(extracted_id) + ' ' + oad_result_name
         each_rep.set(
-            f'Exporting {i+1}/{total} >>> {time.time()-start:.3f} [sec]')
+            f'Exporting {i+1}/{total} >>> {time.time()-start:.3f} [sec]'
+        )
         each_bar.step(1)
     pptx_path = f'{path}/{stamp}_MSRIDD_spectrum.pptx'
     ppt.save(pptx_path)
@@ -4935,6 +5244,7 @@ def save_msms_fig_as_pptx(path, stamp, target_table, each_bar, each_rep):
 #endregion
 
 #region HeatMap of Neutral Loss
+#region Not used function
 def generate_heatmap_of_nl(path, target_table, msms, stamp):
     nl_range, digit = 300, 0.01
     idx = [math_floor(digit*i, 2) for i in range(nl_range*100+1)]
@@ -5012,6 +5322,7 @@ def generate_heatmap_of_nl(path, target_table, msms, stamp):
     del wb['Sheet']
     save_path = f'{path}/{stamp}_MSRIDD_HeatMap_of_NLs.xlsx'
     wb.save(filename=save_path)
+#endregion
 
 def process_timer(func):
     @wraps(func)
@@ -5026,6 +5337,7 @@ def process_timer(func):
         return res
     return _process_timer
 
+#region Not used function
 # @process_timer
 def exclude_null(nls, ratios, msms_df, **kwargs):
     for j, nl in enumerate(nls):
@@ -5036,7 +5348,9 @@ def exclude_null(nls, ratios, msms_df, **kwargs):
             nls[j] = ex_df['Delta'].values[0]
             ratios[j] = ex_df['Ratio(%)'].values[0]
     return nls, ratios
+#endregion
 
+#region Not used function
 # @process_timer
 def generate_excelsheet(wb, df, title='', **kwargs):
     sheet = wb.create_sheet(title=title)
@@ -5045,7 +5359,9 @@ def generate_excelsheet(wb, df, title='', **kwargs):
     sheet.delete_rows(2)
     sheet.freeze_panes = 'A2'
     return wb, sheet
+#endregion
 
+#region Not used function
 # @process_timer
 def coloring_by_ratio(sheet, ratio_df, **kwargs):
     arr = ratio_df.values
@@ -5082,5 +5398,6 @@ def coloring_by_ratio(sheet, ratio_df, **kwargs):
                 sheet.cell(row=row+2, column=col+2).font \
                 = Font(color='FFFFFF', b=True)
     return sheet
+#endregion
 #endregion
 
